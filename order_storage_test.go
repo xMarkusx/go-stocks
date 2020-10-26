@@ -25,7 +25,7 @@ func TestInMemoryOrderStorage(t *testing.T) {
 }
 
 func TestFileSystemOrderStorage(t *testing.T) {
-	tmpStorePath := "./tmp"
+	tmpStorePath := "./tmp/"
 	tmpStoreFile := "test_orders.gob"
 
 	os.Mkdir(tmpStorePath, 0777)

@@ -38,10 +38,7 @@ func (orderStorage *FileSystemOrderStorage) Add(order Order) {
 
 func (orderStorage *FileSystemOrderStorage) Get() []Order {
     orders := []Order{}
-	err := readGob(orderStorage.storagePath + orderStorage.fileName, &orders)
-	if err != nil {
-			fmt.Println(err)
-	}
+	readGob(orderStorage.storagePath + orderStorage.fileName, &orders)
 
 	return orders
 }
@@ -58,7 +55,7 @@ func writeGob(filePath string, object interface{}) error {
 }
 
 func readGob(filePath string, object interface{}) error {
-	file, err := os.Open(filePath)
+	file, err := os.OpenFile(filePath, os.O_RDONLY|os.O_CREATE, 0644)
 	if err == nil {
 		   decoder := gob.NewDecoder(file)
 		   err = decoder.Decode(object)
