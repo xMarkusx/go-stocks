@@ -28,12 +28,12 @@ func (pos Position) toString() string {
 
 type Portfolio struct {
     Positions map[string]Position
-    Orders []Order
+    OrderStorage OrderStorage
 }
 
-func initPortfolio(orders ...Order) Portfolio {
-    p := Portfolio{map[string]Position{}, orders}
-    for _, order := range p.Orders {
+func initPortfolio(orderStorage OrderStorage) Portfolio {
+    p := Portfolio{map[string]Position{}, orderStorage}
+    for _, order := range p.OrderStorage.Get() {
 		p.apply(order)
     }
     return p
@@ -48,7 +48,7 @@ func (portfolio *Portfolio) addBuyOrder(ticker string, price float32, shares int
 
     portfolio.apply(o)
 
-    portfolio.Orders = append(portfolio.Orders, o)
+    portfolio.OrderStorage.Add(o)
 
     return nil
 }
@@ -62,8 +62,8 @@ func (portfolio *Portfolio) addSellOrder(ticker string, price float32, shares in
     o := Order{SellOrderType, ticker, price, shares}
 
     portfolio.apply(o)
-    
-    portfolio.Orders = append(portfolio.Orders, o)
+
+    portfolio.OrderStorage.Add(o)
 
     return nil
 }
