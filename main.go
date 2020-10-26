@@ -1,6 +1,6 @@
 package main
 
-import(
+import (
 	"fmt"
 	"log"
 	"os"
@@ -16,9 +16,9 @@ func main() {
 	app := &cli.App{
 		Commands: []*cli.Command{
 			{
-				Name: "buy",
+				Name:    "buy",
 				Aliases: []string{},
-				Usage: "add a buy order",
+				Usage:   "add a buy order",
 				Action: func(c *cli.Context) error {
 					ticker, price, shares, error := prepareOrderArgs(c.Args().Slice())
 
@@ -31,36 +31,36 @@ func main() {
 
 						return cli.Exit("Failed to add order", 1)
 					}
-					
+
 					fmt.Println("added")
 					return nil
 				},
 			},
 			{
-				Name: "sell",
+				Name:    "sell",
 				Aliases: []string{},
-				Usage: "add a sell order",
+				Usage:   "add a sell order",
 				Action: func(c *cli.Context) error {
 					ticker, price, shares, error := prepareOrderArgs(c.Args().Slice())
 
 					if error == nil {
 						error = p.addSellOrder(ticker, price, shares)
 					}
-					
+
 					if error != nil {
 						fmt.Println(error.Error())
 
 						return cli.Exit("Failed to add order", 1)
 					}
-					
+
 					fmt.Println("sold")
 					return nil
 				},
 			},
 			{
-				Name: "show",
+				Name:    "show",
 				Aliases: []string{"s"},
-				Usage: "show positions in portfolio",
+				Usage:   "show positions in portfolio",
 				Action: func(c *cli.Context) error {
 					positions := p.getPositions()
 					fmt.Printf("Number of positions: %d \n", len(positions))

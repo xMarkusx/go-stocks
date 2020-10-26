@@ -1,9 +1,9 @@
 package main
 
 import (
-	"testing"
-	"reflect"
 	"os"
+	"reflect"
+	"testing"
 )
 
 func TestInMemoryOrderStorage(t *testing.T) {
@@ -12,16 +12,16 @@ func TestInMemoryOrderStorage(t *testing.T) {
 	os.Add(Order{SellOrderType, "MO", 20.45, 10})
 	os.Add(Order{SellOrderType, "MO", 20.45, 5})
 
-    got := os.Get()
-    want := []Order{
+	got := os.Get()
+	want := []Order{
 		Order{BuyOrderType, "MO", 20.45, 20},
 		Order{SellOrderType, "MO", 20.45, 10},
 		Order{SellOrderType, "MO", 20.45, 5},
 	}
 
-    if reflect.DeepEqual(got, want) == false {
-        t.Errorf("Order storage unequal. Expected:%#v Got:%#v", want, got)
-    }
+	if reflect.DeepEqual(got, want) == false {
+		t.Errorf("Order storage unequal. Expected:%#v Got:%#v", want, got)
+	}
 }
 
 func TestFileSystemOrderStorage(t *testing.T) {
@@ -34,15 +34,15 @@ func TestFileSystemOrderStorage(t *testing.T) {
 	orderStorage.Add(Order{SellOrderType, "MO", 20.45, 10})
 	orderStorage.Add(Order{SellOrderType, "MO", 20.45, 5})
 
-    got := orderStorage.Get()
-    want := []Order{
+	got := orderStorage.Get()
+	want := []Order{
 		Order{BuyOrderType, "MO", 20.45, 20},
 		Order{SellOrderType, "MO", 20.45, 10},
 		Order{SellOrderType, "MO", 20.45, 5},
 	}
 
-    if reflect.DeepEqual(got, want) == false {
-        t.Errorf("Order storage unequal. Expected:%#v Got:%#v", want, got)
+	if reflect.DeepEqual(got, want) == false {
+		t.Errorf("Order storage unequal. Expected:%#v Got:%#v", want, got)
 	}
 
 	t.Cleanup(func() {
