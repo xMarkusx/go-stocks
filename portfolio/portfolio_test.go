@@ -90,6 +90,20 @@ func TestPositionIsRemovedWhenCompletelySold(t *testing.T) {
 	}
 }
 
+func TestPortfolioGivesTotalAmountOfInvestedMoney(t *testing.T) {
+	p := InitPortfolio(&InMemoryOrderStorage{})
+	p.AddBuyOrder("MO", 20, 20)
+	p.AddSellOrder("MO", 30, 10)
+	p.AddBuyOrder("PG", 40, 5)
+
+	got := p.GetTotalInvestedMoney()
+	expected := float32(300)
+
+	if got != expected {
+		t.Errorf("Expected total invested money: %v, got %v", expected, got)
+	}
+}
+
 func TestPortfolioCanBeInitializedWithOrders(t *testing.T) {
 	orders := []OrderStorageDTO{
 		OrderStorageDTO{BuyOrderType, "MO", 20.45, 10},

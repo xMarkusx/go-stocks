@@ -71,6 +71,23 @@ func (portfolio *Portfolio) GetPositions() map[string]Position {
 	return portfolio.positions
 }
 
+func (portfolio *Portfolio) GetTotalInvestedMoney() float32 {
+	invested := float32(0.0)
+	for _, order := range portfolio.orderStorage.Get() {
+		if order.orderType == BuyOrderType {
+			invested += order.price * float32(order.shares)
+			continue
+		}
+
+		if order.orderType == SellOrderType {
+			invested -= order.price * float32(order.shares)
+			continue
+		}
+	}
+
+	return invested
+}
+
 func (portfolio *Portfolio) apply(order Order) {
 
 	if order.orderType == BuyOrderType {

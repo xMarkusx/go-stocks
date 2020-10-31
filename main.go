@@ -65,6 +65,7 @@ func main() {
 				Action: func(c *cli.Context) error {
 					positions := p.GetPositions()
 					fmt.Printf("Number of positions: %d \n", len(positions))
+					fmt.Printf("Total invested: %v \n", p.GetTotalInvestedMoney())
 					for _, position := range positions {
 						ticker, shares := position.Dto()
 						fmt.Printf("Ticker: %q, shares: %d\n", ticker, shares)
