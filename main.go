@@ -6,8 +6,8 @@ import (
 	"os"
 	"strconv"
 
-	"stock-monitor/portfolio"
 	"github.com/urfave/cli/v2"
+	"stock-monitor/portfolio"
 )
 
 func main() {
