@@ -25,6 +25,10 @@ func (pos Position) Dto() (string, int) {
 	return pos.ticker, pos.shares
 }
 
+func (pos Position) CurrentValue(valueTracker ValueTracker) float32 {
+	return valueTracker.Current(pos.ticker) * float32(pos.shares)
+}
+
 type Portfolio struct {
 	positions    map[string]Position
 	orderStorage OrderStorage
@@ -33,7 +37,7 @@ type Portfolio struct {
 func InitPortfolio(orderStorage OrderStorage) Portfolio {
 	p := Portfolio{map[string]Position{}, orderStorage}
 	for _, order := range p.orderStorage.Get() {
-		p.apply(order)
+		p.applyOrder(order)
 	}
 	return p
 }
@@ -45,7 +49,7 @@ func (portfolio *Portfolio) AddBuyOrder(ticker string, price float32, shares int
 
 	o := Order{BuyOrderType, ticker, price, shares}
 
-	portfolio.apply(o)
+	portfolio.applyOrder(o)
 
 	portfolio.orderStorage.Add(o)
 
@@ -60,7 +64,7 @@ func (portfolio *Portfolio) AddSellOrder(ticker string, price float32, shares in
 
 	o := Order{SellOrderType, ticker, price, shares}
 
-	portfolio.apply(o)
+	portfolio.applyOrder(o)
 
 	portfolio.orderStorage.Add(o)
 
@@ -88,7 +92,7 @@ func (portfolio *Portfolio) GetTotalInvestedMoney() float32 {
 	return invested
 }
 
-func (portfolio *Portfolio) apply(order Order) {
+func (portfolio *Portfolio) applyOrder(order Order) {
 
 	if order.orderType == BuyOrderType {
 		position, found := portfolio.positions[order.ticker]

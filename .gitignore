@@ -2,3 +2,7 @@ store/*
 !store/.gitkeep
 stock-monitor
 
+finnhub
+
+workspace.code-workspace
+

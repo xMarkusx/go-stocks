@@ -68,7 +68,8 @@ func main() {
 					fmt.Printf("Total invested: %v \n", p.GetTotalInvestedMoney())
 					for _, position := range positions {
 						ticker, shares := position.Dto()
-						fmt.Printf("Ticker: %q, shares: %d\n", ticker, shares)
+						valueTracker := portfolio.FinnHubValueTracker{}
+						fmt.Printf("Ticker: %q, shares: %d, value: %#v\n", ticker, shares, position.CurrentValue(valueTracker))
 					}
 
 					return nil
