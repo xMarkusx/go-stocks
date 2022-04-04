@@ -2,20 +2,6 @@ package portfolio
 
 import "errors"
 
-type Order struct {
-	orderType orderType
-	ticker    string
-	price     float32
-	shares    int
-}
-
-type orderType string
-
-const (
-	BuyOrderType  orderType = "BUY"
-	SellOrderType orderType = "SELL"
-)
-
 type Position struct {
 	ticker string
 	shares int
@@ -31,13 +17,13 @@ func (pos Position) CurrentValue(valueTracker ValueTracker) float32 {
 
 type Portfolio struct {
 	positions    map[string]Position
-	orderStorage OrderStorage
+	eventStream EventStream
 }
 
-func InitPortfolio(orderStorage OrderStorage) Portfolio {
-	p := Portfolio{map[string]Position{}, orderStorage}
-	for _, order := range p.orderStorage.Get() {
-		p.applyOrder(order)
+func InitPortfolio(eventStream EventStream) Portfolio {
+	p := Portfolio{map[string]Position{}, eventStream}
+	for _, event := range p.eventStream.Get() {
+		p.reconstitute(event)
 	}
 	return p
 }
@@ -47,11 +33,18 @@ func (portfolio *Portfolio) AddBuyOrder(ticker string, price float32, shares int
 		return errors.New("number of shares must be greater than 0")
 	}
 
-	o := Order{BuyOrderType, ticker, price, shares}
+	sharesAddedToPortfolioEvent := Event{
+		"Portfolio.SharesAddedToPortfolio",
+		map[string]interface{}{
+			"ticker": ticker,
+			"shares": shares,
+			"price": price,
+		},
+	}
 
-	portfolio.applyOrder(o)
+	portfolio.reconstitute(sharesAddedToPortfolioEvent)
 
-	portfolio.orderStorage.Add(o)
+	portfolio.eventStream.Add(sharesAddedToPortfolioEvent)
 
 	return nil
 }
@@ -62,11 +55,18 @@ func (portfolio *Portfolio) AddSellOrder(ticker string, price float32, shares in
 		return errors.New("not allowed to sell more shares than currently in portfolio")
 	}
 
-	o := Order{SellOrderType, ticker, price, shares}
+	sharesRemovedFromPortfolioEvent := Event{
+		"Portfolio.SharesRemovedFromPortfolio",
+		map[string]interface{}{
+			"ticker": ticker,
+			"shares": shares,
+			"price": price,
+		},
+	}
 
-	portfolio.applyOrder(o)
+	portfolio.reconstitute(sharesRemovedFromPortfolioEvent)
 
-	portfolio.orderStorage.Add(o)
+	portfolio.eventStream.Add(sharesRemovedFromPortfolioEvent)
 
 	return nil
 }
@@ -77,14 +77,16 @@ func (portfolio *Portfolio) GetPositions() map[string]Position {
 
 func (portfolio *Portfolio) GetTotalInvestedMoney() float32 {
 	invested := float32(0.0)
-	for _, order := range portfolio.orderStorage.Get() {
-		if order.orderType == BuyOrderType {
-			invested += order.price * float32(order.shares)
+	for _, event := range portfolio.eventStream.Get() {
+		_, shares, price := extractEventData(event)
+
+		if event.Name == "Portfolio.SharesAddedToPortfolio" {
+			invested += price * float32(shares)
 			continue
 		}
 
-		if order.orderType == SellOrderType {
-			invested -= order.price * float32(order.shares)
+		if event.Name == "Portfolio.SharesRemovedFromPortfolio" {
+			invested -= price * float32(shares)
 			continue
 		}
 	}
@@ -92,30 +94,42 @@ func (portfolio *Portfolio) GetTotalInvestedMoney() float32 {
 	return invested
 }
 
-func (portfolio *Portfolio) applyOrder(order Order) {
+func (portfolio *Portfolio) reconstitute(event Event) {
+	ticker, shares, _ := extractEventData(event)
 
-	if order.orderType == BuyOrderType {
-		position, found := portfolio.positions[order.ticker]
+	if event.Name == "Portfolio.SharesAddedToPortfolio" {
+		position, found := portfolio.positions[ticker]
 		if !found {
-			portfolio.positions[order.ticker] = Position{order.ticker, order.shares}
+			portfolio.positions[ticker] = Position{ticker, shares}
 		} else {
-			position.shares += order.shares
-			portfolio.positions[order.ticker] = position
+			position.shares += shares
+			portfolio.positions[ticker] = position
 		}
 
 		return
 	}
 
-	if order.orderType == SellOrderType {
-		position := portfolio.positions[order.ticker]
+	if event.Name == "Portfolio.SharesRemovedFromPortfolio" {
+		position := portfolio.positions[ticker]
 
-		if position.shares == order.shares {
-			delete(portfolio.positions, order.ticker)
+		if position.shares == shares {
+			delete(portfolio.positions, ticker)
 			return
 		}
 
-		position.shares -= order.shares
-		portfolio.positions[order.ticker] = position
+		position.shares -= shares
+		portfolio.positions[ticker] = position
 		return
 	}
+}
+
+func extractEventData(event Event) (string, int, float32) {
+	ticker := event.Payload["ticker"].(string)
+	shares := event.Payload["shares"].(int)
+	price, ok := event.Payload["price"].(float32)
+	if !ok {
+		price = float32(event.Payload["price"].(float64))
+	}
+
+	return ticker, shares, price
 }

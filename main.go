@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	orderStorage := &portfolio.FileSystemOrderStorage{"./store/", "orders.gob"}
+	orderStorage := &portfolio.FileSystemEventStream{"./store/", "portfolio_event_stream.gob"}
 	p := portfolio.InitPortfolio(orderStorage)
 
 	app := &cli.App{
