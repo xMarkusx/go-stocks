@@ -1,4 +1,4 @@
-package portfolio
+package query
 
 import (
 	"testing"

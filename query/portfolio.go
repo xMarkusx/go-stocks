@@ -1,7 +1,6 @@
-package portfolio
+package query
 
 import (
-	"errors"
 	"stock-monitor/infrastructure"
 )
 
@@ -14,12 +13,16 @@ func (pos Position) Dto() (string, int) {
 	return pos.ticker, pos.shares
 }
 
+func (pos Position) CurrentValue(valueTracker ValueTracker) float32 {
+	return valueTracker.Current(pos.ticker) * float32(pos.shares)
+}
+
 type Portfolio struct {
 	positions    map[string]Position
 	eventStream infrastructure.EventStream
 }
 
-func ReconstitueFromStream(eventStream infrastructure.EventStream) Portfolio {
+func RunProjection(eventStream infrastructure.EventStream) Portfolio {
 	p := Portfolio{map[string]Position{}, eventStream}
 	for _, event := range p.eventStream.Get() {
 		p.apply(event)
@@ -27,51 +30,27 @@ func ReconstitueFromStream(eventStream infrastructure.EventStream) Portfolio {
 	return p
 }
 
-func (portfolio *Portfolio) AddBuyOrder(ticker string, price float32, shares int) error {
-	if shares <= 0 {
-		return errors.New("number of shares must be greater than 0")
-	}
-
-	sharesAddedToPortfolioEvent := infrastructure.Event{
-		"Portfolio.SharesAddedToPortfolio",
-		map[string]interface{}{
-			"ticker": ticker,
-			"shares": shares,
-			"price": price,
-		},
-	}
-
-	portfolio.eventStream.Add(sharesAddedToPortfolioEvent)
-
-	portfolio.apply(sharesAddedToPortfolioEvent)
-
-	return nil
-}
-
-func (portfolio *Portfolio) AddSellOrder(ticker string, price float32, shares int) error {
-	position := portfolio.positions[ticker]
-	if position.shares < shares {
-		return errors.New("not allowed to sell more shares than currently in portfolio")
-	}
-
-	sharesRemovedFromPortfolioEvent := infrastructure.Event{
-		"Portfolio.SharesRemovedFromPortfolio",
-		map[string]interface{}{
-			"ticker": ticker,
-			"shares": shares,
-			"price": price,
-		},
-	}
-
-	portfolio.eventStream.Add(sharesRemovedFromPortfolioEvent)
-
-	portfolio.apply(sharesRemovedFromPortfolioEvent)
-
-	return nil
-}
-
 func (portfolio *Portfolio) GetPositions() map[string]Position {
 	return portfolio.positions
+}
+
+func (portfolio *Portfolio) GetTotalInvestedMoney() float32 {
+	invested := float32(0.0)
+	for _, event := range portfolio.eventStream.Get() {
+		_, shares, price := extractEventData(event)
+
+		if event.Name == "Portfolio.SharesAddedToPortfolio" {
+			invested += price * float32(shares)
+			continue
+		}
+
+		if event.Name == "Portfolio.SharesRemovedFromPortfolio" {
+			invested -= price * float32(shares)
+			continue
+		}
+	}
+
+	return invested
 }
 
 func (portfolio *Portfolio) apply(event infrastructure.Event) {
@@ -91,6 +70,11 @@ func (portfolio *Portfolio) apply(event infrastructure.Event) {
 
 	if event.Name == "Portfolio.SharesRemovedFromPortfolio" {
 		position := portfolio.positions[ticker]
+
+		if position.shares == shares {
+			delete(portfolio.positions, ticker)
+			return
+		}
 
 		position.shares -= shares
 		portfolio.positions[ticker] = position

@@ -1,4 +1,4 @@
-package portfolio
+package infrastructure
 
 import (
 	"encoding/gob"
@@ -7,7 +7,7 @@ import (
 )
 
 type Event struct {
-	Name string
+	Name    string
 	Payload map[string]interface{}
 }
 
@@ -37,7 +37,7 @@ func (eventStream *FileSystemEventStream) Add(event Event) {
 	events := []Event{}
 	read(eventStream.StoragePath+eventStream.FileName, &events)
 	events = append(events, event)
-	
+
 	err := write(eventStream.StoragePath+eventStream.FileName, events)
 	if err != nil {
 		fmt.Println(err)

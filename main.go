@@ -7,12 +7,15 @@ import (
 	"strconv"
 
 	"github.com/urfave/cli/v2"
+	"stock-monitor/infrastructure"
 	"stock-monitor/portfolio"
+	"stock-monitor/query"
 )
 
 func main() {
-	orderStorage := &portfolio.FileSystemEventStream{"./store/", "portfolio_event_stream.gob"}
-	p := portfolio.InitPortfolio(orderStorage)
+	portfolioEventStream := &infrastructure.FileSystemEventStream{"./store/", "portfolio_event_stream.gob"}
+	p := portfolio.ReconstitueFromStream(portfolioEventStream)
+	portfolioQuery := query.RunProjection(portfolioEventStream)
 
 	app := &cli.App{
 		Commands: []*cli.Command{
@@ -63,12 +66,12 @@ func main() {
 				Aliases: []string{"s"},
 				Usage:   "show positions in portfolio",
 				Action: func(c *cli.Context) error {
-					positions := p.GetPositions()
+					positions := portfolioQuery.GetPositions()
 					fmt.Printf("Number of positions: %d \n", len(positions))
-					fmt.Printf("Total invested: %v \n", p.GetTotalInvestedMoney())
+					fmt.Printf("Total invested: %v \n", portfolioQuery.GetTotalInvestedMoney())
 					for _, position := range positions {
 						ticker, shares := position.Dto()
-						valueTracker := portfolio.FinnHubValueTracker{}
+						valueTracker := query.FinnHubValueTracker{}
 						fmt.Printf("Ticker: %q, shares: %d, value: %#v\n", ticker, shares, position.CurrentValue(valueTracker))
 					}
 
