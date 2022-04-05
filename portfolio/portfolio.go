@@ -1,8 +1,8 @@
 package portfolio
 
 import (
-	"errors"
 	"stock-monitor/infrastructure"
+	"time"
 )
 
 type Position struct {
@@ -27,17 +27,27 @@ func ReconstitueFromStream(eventStream infrastructure.EventStream) Portfolio {
 	return p
 }
 
-func (portfolio *Portfolio) AddBuyOrder(ticker string, price float32, shares int) error {
-	if shares <= 0 {
-		return errors.New("number of shares must be greater than 0")
+func (portfolio *Portfolio) AddSharesToPortfolio(command addSharesToPortfolioCommand) error {
+	if command.NumberOfShares <= 0 {
+		return &InvalidNumbersOfSharesError{"number of shares must be greater than 0"}
+	}
+	_, err := time.Parse("2006-01-02", command.Date)
+	if err != nil {
+		return &UnsupportedDateFormatError{"Unsupported date time format. Must be YYYY-MM-DD. Got: " + command.Date}
+	}
+
+	commandDate, _ := time.Parse("2006-01-02", command.Date)
+	if !dateIsInThePast(commandDate) {
+		return &InvalidDateError{"Date can't be in the future. Got: " + command.Date}
 	}
 
 	sharesAddedToPortfolioEvent := infrastructure.Event{
 		"Portfolio.SharesAddedToPortfolio",
 		map[string]interface{}{
-			"ticker": ticker,
-			"shares": shares,
-			"price": price,
+			"ticker": command.Ticker,
+			"shares": command.NumberOfShares,
+			"price": command.Price,
+			"date": command.Date,
 		},
 	}
 
@@ -48,18 +58,28 @@ func (portfolio *Portfolio) AddBuyOrder(ticker string, price float32, shares int
 	return nil
 }
 
-func (portfolio *Portfolio) AddSellOrder(ticker string, price float32, shares int) error {
-	position := portfolio.positions[ticker]
-	if position.shares < shares {
-		return errors.New("not allowed to sell more shares than currently in portfolio")
+func (portfolio *Portfolio) RemoveSharesFromPortfolio(command removeSharesFromPortfolioCommand) error {
+	position := portfolio.positions[command.Ticker]
+	if position.shares < command.NumberOfShares {
+		return &CantSellMoreSharesThanExistingError{"not allowed to sell more shares than currently in portfolio"}
+	}
+	_, err := time.Parse("2006-01-02", command.Date)
+	if err != nil {
+		return &UnsupportedDateFormatError{"Unsupported date time format. Must be YYYY-MM-DD. Got: " + command.Date}
+	}
+
+	commandDate, _ := time.Parse("2006-01-02", command.Date)
+	if !dateIsInThePast(commandDate) {
+		return &InvalidDateError{"Date can't be in the future. Got: " + command.Date}
 	}
 
 	sharesRemovedFromPortfolioEvent := infrastructure.Event{
 		"Portfolio.SharesRemovedFromPortfolio",
 		map[string]interface{}{
-			"ticker": ticker,
-			"shares": shares,
-			"price": price,
+			"ticker": command.Ticker,
+			"shares": command.NumberOfShares,
+			"price": command.Price,
+			"date": command.Date,
 		},
 	}
 
@@ -68,10 +88,6 @@ func (portfolio *Portfolio) AddSellOrder(ticker string, price float32, shares in
 	portfolio.apply(sharesRemovedFromPortfolioEvent)
 
 	return nil
-}
-
-func (portfolio *Portfolio) GetPositions() map[string]Position {
-	return portfolio.positions
 }
 
 func (portfolio *Portfolio) apply(event infrastructure.Event) {
@@ -107,4 +123,15 @@ func extractEventData(event infrastructure.Event) (string, int, float32) {
 	}
 
 	return ticker, shares, price
+}
+
+func dateIsInThePast(date time.Time) bool {
+	today := time.Now()
+	diff := today.Sub(date)
+
+	if diff < 0 {
+		return false
+	}
+
+	return true
 }

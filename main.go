@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -25,9 +26,14 @@ func main() {
 				Usage:   "add a buy order",
 				Action: func(c *cli.Context) error {
 					ticker, price, shares, error := prepareOrderArgs(c.Args().Slice())
+					command := portfolio.AddSharesToPortfolioCommand(ticker, shares, price)
+					date, dateErr := getDate(c.Args().Slice())
+					if dateErr == nil {
+						command.Date = date
+					}
 
 					if error == nil {
-						error = p.AddBuyOrder(ticker, price, shares)
+						error = p.AddSharesToPortfolio(command)
 					}
 
 					if error != nil {
@@ -46,9 +52,14 @@ func main() {
 				Usage:   "add a sell order",
 				Action: func(c *cli.Context) error {
 					ticker, price, shares, error := prepareOrderArgs(c.Args().Slice())
+					command := portfolio.RemoveSharesFromPortfolioCommand(ticker, shares, price)
+					date, dateErr := getDate(c.Args().Slice())
+					if dateErr == nil {
+						command.Date = date
+					}
 
 					if error == nil {
-						error = p.AddSellOrder(ticker, price, shares)
+						error = p.RemoveSharesFromPortfolio(command)
 					}
 
 					if error != nil {
@@ -99,4 +110,12 @@ func prepareOrderArgs(args []string) (string, float32, int, error) {
 	}
 
 	return ticker, float32(price), shares, nil
+}
+
+func getDate(args []string) (string, error) {
+	if len(args) < 4 {
+		return "", errors.New("No date given")
+	}
+
+	return args[3], nil
 }
