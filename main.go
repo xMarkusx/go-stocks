@@ -7,16 +7,18 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/urfave/cli/v2"
 	"stock-monitor/infrastructure"
 	"stock-monitor/portfolio"
 	"stock-monitor/query"
+	"stock-monitor/query/position-list"
+	"stock-monitor/query/total-invested-money"
+
+	"github.com/urfave/cli/v2"
 )
 
 func main() {
 	portfolioEventStream := &infrastructure.FileSystemEventStream{"./store/", "portfolio_event_stream.gob"}
 	p := portfolio.ReconstitueFromStream(portfolioEventStream)
-	portfolioQuery := query.RunProjection(portfolioEventStream)
 
 	app := &cli.App{
 		Commands: []*cli.Command{
@@ -77,13 +79,11 @@ func main() {
 				Aliases: []string{"s"},
 				Usage:   "show positions in portfolio",
 				Action: func(c *cli.Context) error {
-					positions := portfolioQuery.GetPositions()
-					fmt.Printf("Number of positions: %d \n", len(positions))
-					fmt.Printf("Total invested: %v \n", portfolioQuery.GetTotalInvestedMoney())
-					for _, position := range positions {
-						ticker, shares := position.Dto()
-						valueTracker := query.FinnHubValueTracker{}
-						fmt.Printf("Ticker: %q, shares: %d, value: %#v\n", ticker, shares, position.CurrentValue(valueTracker))
+					positionListQuery := positionList.PositionListQuery{portfolioEventStream, query.FinnHubValueTracker{}}
+					totalInvestedMoneyQuery := totalInvestedMoney.TotalInvestedMoneyQuery{portfolioEventStream}
+					fmt.Printf("Total invested: %v \n", totalInvestedMoneyQuery.GetTotalInvestedMoney())
+					for _, position := range positionListQuery.GetPositions() {
+						fmt.Printf("Ticker: %q, shares: %d, value: %#v\n", position.Ticker, position.Shares, position.CurrentValue)
 					}
 
 					return nil
