@@ -10,6 +10,7 @@ import (
 	"stock-monitor/infrastructure"
 	"stock-monitor/portfolio"
 	"stock-monitor/query"
+	"stock-monitor/query/order-history"
 	"stock-monitor/query/position-list"
 	"stock-monitor/query/total-invested-money"
 
@@ -84,6 +85,21 @@ func main() {
 					fmt.Printf("Total invested: %v \n", totalInvestedMoneyQuery.GetTotalInvestedMoney())
 					for _, position := range positionListQuery.GetPositions() {
 						fmt.Printf("Ticker: %q, shares: %d, value: %#v\n", position.Ticker, position.Shares, position.CurrentValue)
+					}
+
+					return nil
+				},
+			},
+			{
+				Name:    "order-history",
+				Aliases: []string{"oh"},
+				Usage:   "Shows history of all orders",
+				Action: func(c *cli.Context) error {
+					orderHistoryQuery := orderHistory.OrderHistoryQuery{portfolioEventStream}
+					fmt.Print("Order hsitory: \n")
+					for _, order := range orderHistoryQuery.GetOrders() {
+						orderType, ticker, shares, price, date := order.Dto()
+						fmt.Printf("%#v | %#v - Ticker: %#v, shares: %#v, price: %#v\n", date, orderType, ticker, shares, price)
 					}
 
 					return nil
