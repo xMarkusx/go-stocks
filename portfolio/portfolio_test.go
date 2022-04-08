@@ -146,3 +146,35 @@ func TestDateCanNotBeInTheFutureWhenRemovingShares(t *testing.T) {
 		t.Errorf("Expected InvalidDateError but got %#v", err)
 	}
 }
+
+func TestDateCanNotBeOlderThanDateOfLastOrderWhenAddingShares(t *testing.T) {
+	events := []infrastructure.Event{
+		{"Portfolio.SharesAddedToPortfolio", map[string]interface{}{"ticker": "MO", "price": 20.45, "shares": 10, "date": "2020-01-02"}},
+	}
+	eventStream := infrastructure.InMemoryEventStream{events}
+	p := ReconstitueFromStream(&eventStream)
+	command := AddSharesToPortfolioCommand("MO", 10, 20.45)
+	command.Date = "2020-01-01"
+	err := p.AddSharesToPortfolio(command)
+
+	_, ok := err.(*InvalidDateError)
+	if !ok {
+		t.Errorf("Expected InvalidDateError but got %#v", err)
+	}
+}
+
+func TestDateCanNotBeOlderThanDateOfLastOrderWhenRemovingShares(t *testing.T) {
+	events := []infrastructure.Event{
+		{"Portfolio.SharesAddedToPortfolio", map[string]interface{}{"ticker": "MO", "price": 20.45, "shares": 10, "date": "2020-01-02"}},
+	}
+	eventStream := infrastructure.InMemoryEventStream{events}
+	p := ReconstitueFromStream(&eventStream)
+	command := RemoveSharesFromPortfolioCommand("MO", 10, 20.45)
+	command.Date = "2020-01-01"
+	err := p.RemoveSharesFromPortfolio(command)
+
+	_, ok := err.(*InvalidDateError)
+	if !ok {
+		t.Errorf("Expected InvalidDateError but got %#v", err)
+	}
+}

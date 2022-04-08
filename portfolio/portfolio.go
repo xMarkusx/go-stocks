@@ -15,12 +15,13 @@ func (pos Position) Dto() (string, int) {
 }
 
 type Portfolio struct {
-	positions    map[string]Position
+	positions map[string]Position
 	eventStream infrastructure.EventStream
+	lastOrderDate string
 }
 
 func ReconstitueFromStream(eventStream infrastructure.EventStream) Portfolio {
-	p := Portfolio{map[string]Position{}, eventStream}
+	p := Portfolio{map[string]Position{}, eventStream, ""}
 	for _, event := range p.eventStream.Get() {
 		p.apply(event)
 	}
@@ -31,14 +32,16 @@ func (portfolio *Portfolio) AddSharesToPortfolio(command addSharesToPortfolioCom
 	if command.NumberOfShares <= 0 {
 		return &InvalidNumbersOfSharesError{"number of shares must be greater than 0"}
 	}
-	_, err := time.Parse("2006-01-02", command.Date)
-	if err != nil {
+	if !commandDateHasValidFormat(command.Date) {
 		return &UnsupportedDateFormatError{"Unsupported date time format. Must be YYYY-MM-DD. Got: " + command.Date}
 	}
 
-	commandDate, _ := time.Parse("2006-01-02", command.Date)
-	if !dateIsInThePast(commandDate) {
+	if !dateIsInThePast(command.Date) {
 		return &InvalidDateError{"Date can't be in the future. Got: " + command.Date}
+	}
+
+	if !commandDateIsLaterThanLastOrderDate(command.Date, portfolio.lastOrderDate) {
+		return &InvalidDateError{"Date can't older than date of last order. Got: " + command.Date}
 	}
 
 	sharesAddedToPortfolioEvent := infrastructure.Event{
@@ -63,14 +66,17 @@ func (portfolio *Portfolio) RemoveSharesFromPortfolio(command removeSharesFromPo
 	if position.shares < command.NumberOfShares {
 		return &CantSellMoreSharesThanExistingError{"not allowed to sell more shares than currently in portfolio"}
 	}
-	_, err := time.Parse("2006-01-02", command.Date)
-	if err != nil {
+
+	if !commandDateHasValidFormat(command.Date) {
 		return &UnsupportedDateFormatError{"Unsupported date time format. Must be YYYY-MM-DD. Got: " + command.Date}
 	}
 
-	commandDate, _ := time.Parse("2006-01-02", command.Date)
-	if !dateIsInThePast(commandDate) {
+	if !dateIsInThePast(command.Date) {
 		return &InvalidDateError{"Date can't be in the future. Got: " + command.Date}
+	}
+
+	if !commandDateIsLaterThanLastOrderDate(command.Date, portfolio.lastOrderDate) {
+		return &InvalidDateError{"Date can't older than date of last order. Got: " + command.Date}
 	}
 
 	sharesRemovedFromPortfolioEvent := infrastructure.Event{
@@ -92,6 +98,8 @@ func (portfolio *Portfolio) RemoveSharesFromPortfolio(command removeSharesFromPo
 
 func (portfolio *Portfolio) apply(event infrastructure.Event) {
 	ticker, shares, _ := extractEventData(event)
+
+	portfolio.lastOrderDate, _ = event.Payload["date"].(string)
 
 	if event.Name == "Portfolio.SharesAddedToPortfolio" {
 		position, found := portfolio.positions[ticker]
@@ -125,10 +133,31 @@ func extractEventData(event infrastructure.Event) (string, int, float32) {
 	return ticker, shares, price
 }
 
-func dateIsInThePast(date time.Time) bool {
-	today := time.Now()
-	diff := today.Sub(date)
+func commandDateHasValidFormat(date string) bool {
+	_, err := time.Parse("2006-01-02", date)
+	if err != nil {
+		return false
+	}
 
+	return true
+}
+
+func dateIsInThePast(date string) bool {
+	commandDate, _ := time.Parse("2006-01-02", date)
+	today := time.Now()
+	diff := today.Sub(commandDate)
+
+	if diff < 0 {
+		return false
+	}
+
+	return true
+}
+
+func commandDateIsLaterThanLastOrderDate(commandDate string, lastOrderDate string) bool {
+	cd, _ := time.Parse("2006-01-02", commandDate)
+	lod, _ := time.Parse("2006-01-02", lastOrderDate)
+	diff := cd.Sub(lod)
 	if diff < 0 {
 		return false
 	}
