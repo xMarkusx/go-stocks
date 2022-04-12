@@ -2,6 +2,7 @@ package totalInvestedMoney
 
 import (
 	"stock-monitor/infrastructure"
+	"stock-monitor/portfolio"
 )
 
 type TotalInvestedMoneyQuery struct {
@@ -13,12 +14,12 @@ func (totalInvestedMoneyQuery *TotalInvestedMoneyQuery) GetTotalInvestedMoney() 
 	for _, event := range totalInvestedMoneyQuery.EventStream.Get() {
 		_, shares, price := extractEventData(event)
 
-		if event.Name == "Portfolio.SharesAddedToPortfolio" {
+		if event.Name == portfolio.SharesAddedToPortfolioEvent {
 			invested += price * float32(shares)
 			continue
 		}
 
-		if event.Name == "Portfolio.SharesRemovedFromPortfolio" {
+		if event.Name == portfolio.SharesRemovedFromPortfolioEvent {
 			invested -= price * float32(shares)
 			continue
 		}

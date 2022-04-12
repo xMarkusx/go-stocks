@@ -2,6 +2,7 @@ package positionList
 
 import (
 	"stock-monitor/infrastructure"
+	"stock-monitor/portfolio"
 	"stock-monitor/query"
 )
 
@@ -31,7 +32,7 @@ func runPositionListProjection(eventStream infrastructure.EventStream) map[strin
 	for _, event := range eventStream.Get() {
 		ticker, shares, _ := extractEventData(event)
 
-		if event.Name == "Portfolio.SharesAddedToPortfolio" {
+		if event.Name == portfolio.SharesAddedToPortfolioEvent {
 			currentShares, found := positions[ticker]
 			if !found {
 				positions[ticker] = shares
@@ -42,7 +43,7 @@ func runPositionListProjection(eventStream infrastructure.EventStream) map[strin
 			continue
 		}
 
-		if event.Name == "Portfolio.SharesRemovedFromPortfolio" {
+		if event.Name == portfolio.SharesRemovedFromPortfolioEvent {
 			currentShares := positions[ticker]
 
 			if currentShares == shares {

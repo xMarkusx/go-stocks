@@ -19,7 +19,8 @@ import (
 
 func main() {
 	portfolioEventStream := &infrastructure.FileSystemEventStream{"./store/", "portfolio_event_stream.gob"}
-	p := portfolio.ReconstitueFromStream(portfolioEventStream)
+	state := portfolio.NewEventBasedPortfolioState(portfolioEventStream)
+	p := portfolio.NewPortfolio(&state)
 
 	app := &cli.App{
 		Commands: []*cli.Command{

@@ -2,6 +2,7 @@ package orderHistory
 
 import(
 	"stock-monitor/infrastructure"
+	"stock-monitor/portfolio"
 )
 
 type OrderHistoryQueryInterface interface {
@@ -27,7 +28,7 @@ type OrderHistoryQuery struct {
 func (orderHistoryQuery *OrderHistoryQuery) GetOrders() []Order {
 	orders := []Order{}
 	for _, event := range orderHistoryQuery.EventStream.Get() {
-		if event.Name == "Portfolio.SharesAddedToPortfolio" {
+		if event.Name == portfolio.SharesAddedToPortfolioEvent {
 			ticker, shares, price, date := extractEventData(event)
 			order := Order{"BUY", ticker, shares, price, date}
 			orders = append(orders, order)
@@ -35,7 +36,7 @@ func (orderHistoryQuery *OrderHistoryQuery) GetOrders() []Order {
 			continue
 		}
 
-		if event.Name == "Portfolio.SharesRemovedFromPortfolio" {
+		if event.Name == portfolio.SharesRemovedFromPortfolioEvent {
 			ticker, shares, price, date := extractEventData(event)
 			order := Order{"SELL", ticker, shares, price, date}
 			orders = append(orders, order)

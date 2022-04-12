@@ -1,16 +1,89 @@
 package portfolio
 
 import (
+	"reflect"
 	"testing"
 	"time"
-	"reflect"
-	"stock-monitor/infrastructure"
 )
 
+type fakePortfolioState struct {
+	lastOrderDate string
+	numberOfSharesForTicker map[string]int
+	addOrders []addSharesToPortfolioCommand
+	removeOrders []removeSharesFromPortfolioCommand
+}
+
+func (state *fakePortfolioState) GetNumberOfSharesForTicker(ticker string) int {
+	return state.numberOfSharesForTicker[ticker]
+}
+
+func (state *fakePortfolioState) GetDateOfLastOrder() string {
+	return state.lastOrderDate
+}
+
+func (state *fakePortfolioState) AddShares(command addSharesToPortfolioCommand) {
+	state.addOrders = append(state.addOrders, command)
+}
+
+func (state *fakePortfolioState) RemoveShares(command removeSharesFromPortfolioCommand) {
+	state.removeOrders = append(state.removeOrders, command)
+}
+
+func initFakeState() fakePortfolioState {
+	return fakePortfolioState{"", map[string]int{}, []addSharesToPortfolioCommand{}, []removeSharesFromPortfolioCommand{}}
+}
+
+func TestCanCreatePortfolio(t *testing.T) {
+	state := initFakeState()
+
+	portfolio := NewPortfolio(&state)
+	
+	expected := Portfolio{&state}
+	
+	if reflect.DeepEqual(portfolio, expected) == false {
+		t.Errorf("State not updated. Expected:%#v Got:%#v", expected, portfolio)
+	}
+} 
+
+func TestCanAddShares(t *testing.T) {
+	state := initFakeState()
+	portfolio := Portfolio{&state}
+	command := AddSharesToPortfolioCommand("MO", 10, 20.45)
+	command.Date = "2000-01-02"
+
+	portfolio.AddSharesToPortfolio(command)
+
+	expected := []addSharesToPortfolioCommand{{"MO", 10, 20.45, "2000-01-02"}}
+	got := state.addOrders
+	
+	if reflect.DeepEqual(got, expected) == false {
+		t.Errorf("State not updated. Expected:%#v Got:%#v", expected, got)
+	}
+}
+
+func TestCanRemoveShares(t *testing.T) {
+	state := initFakeState()
+	state.numberOfSharesForTicker = map[string]int{"MO": 11}
+	portfolio := Portfolio{&state}
+	command := RemoveSharesFromPortfolioCommand("MO", 10, 20.45)
+	command.Date = "2000-01-02"
+
+	portfolio.RemoveSharesFromPortfolio(command)
+
+	expected := []removeSharesFromPortfolioCommand{{"MO", 10, 20.45, "2000-01-02"}}
+	got := state.removeOrders
+	
+	if reflect.DeepEqual(got, expected) == false {
+		t.Errorf("State not updated. Expected:%#v Got:%#v", expected, got)
+	}
+}
+
 func TestCanNotBuyZeroShares(t *testing.T) {
-	p := ReconstitueFromStream(&infrastructure.InMemoryEventStream{})
+	state := initFakeState()
+	portfolio := Portfolio{&state}
 	command := AddSharesToPortfolioCommand("MO", 0, 20.45)
-	err := p.AddSharesToPortfolio(command)
+
+	err := portfolio.AddSharesToPortfolio(command)
 
 	_, ok := err.(*InvalidNumbersOfSharesError)
 	if !ok {
@@ -19,9 +92,11 @@ func TestCanNotBuyZeroShares(t *testing.T) {
 }
 
 func TestCanNotBuyNegativeNumberOfShares(t *testing.T) {
-	p := ReconstitueFromStream(&infrastructure.InMemoryEventStream{})
+	state := initFakeState()
+	portfolio := Portfolio{&state}
 	command := AddSharesToPortfolioCommand("MO", -10, 20.45)
-	err := p.AddSharesToPortfolio(command)
+
+	err := portfolio.AddSharesToPortfolio(command)
 
 	_, ok := err.(*InvalidNumbersOfSharesError)
 	if !ok {
@@ -30,12 +105,12 @@ func TestCanNotBuyNegativeNumberOfShares(t *testing.T) {
 }
 
 func TestCanNotSellMoreSharesThenCurrentlyInPortfolio(t *testing.T) {
-	p := ReconstitueFromStream(&infrastructure.InMemoryEventStream{})
-	addSharesCommand := AddSharesToPortfolioCommand("MO", 20, 20.45)
+	state := initFakeState()
+	portfolio := Portfolio{&state}
+
 	removeSharesCommand := RemoveSharesFromPortfolioCommand("MO", 21, 20.45)
 
-	p.AddSharesToPortfolio(addSharesCommand)
-	err := p.RemoveSharesFromPortfolio(removeSharesCommand)
+	err := portfolio.RemoveSharesFromPortfolio(removeSharesCommand)
 
 	_, ok := err.(*CantSellMoreSharesThanExistingError)
 	if !ok {
@@ -43,55 +118,13 @@ func TestCanNotSellMoreSharesThenCurrentlyInPortfolio(t *testing.T) {
 	}
 }
 
-func TestPortfolioCanBeInitializedWithEvents(t *testing.T) {
-	events := []infrastructure.Event{
-		{"Portfolio.SharesAddedToPortfolio", map[string]interface{}{"ticker": "MO", "price": 20.45, "shares": 10}},
-		{"Portfolio.SharesAddedToPortfolio", map[string]interface{}{"ticker": "PG", "price": 40.00, "shares": 20}},
-		{"Portfolio.SharesRemovedFromPortfolio", map[string]interface{}{"ticker": "MO", "price": 24.00, "shares": 5}},
-	}
-	p := ReconstitueFromStream(&infrastructure.InMemoryEventStream{events})
-	got := p.positions
-	expected := map[string]Position{
-		"MO": {"MO", 5},
-		"PG": {"PG", 20},
-	}
-
-	if reflect.DeepEqual(got, expected) == false {
-		t.Errorf("Positions unequal got: %#v, want: %#v", got, expected)
-	}
-}
-
-func TestEventsWillBeAddedToEventStream(t *testing.T) {
-	eventStream := &infrastructure.InMemoryEventStream{}
-	p := ReconstitueFromStream(eventStream)
-	addSharesCommand := AddSharesToPortfolioCommand("MO", 20, 20.45)
-	addSharesCommand.Date = "2000-01-02"
-	removeSharesCommand := RemoveSharesFromPortfolioCommand("MO", 10, 20.45)
-	removeSharesCommand.Date = "2000-01-02"
-	removeSharesCommand2 := RemoveSharesFromPortfolioCommand("MO", 5, 20.45)
-	removeSharesCommand2.Date = "2000-01-02"
-	p.AddSharesToPortfolio(addSharesCommand)
-	p.RemoveSharesFromPortfolio(removeSharesCommand)
-	p.RemoveSharesFromPortfolio(removeSharesCommand2)
-
-	got := eventStream.Get()
-	want := []infrastructure.Event{
-		{"Portfolio.SharesAddedToPortfolio", map[string]interface{}{"ticker": "MO", "price": float32(20.45), "shares": 20, "date": "2000-01-02"}},
-		{"Portfolio.SharesRemovedFromPortfolio", map[string]interface{}{"ticker": "MO", "price": float32(20.45), "shares": 10, "date": "2000-01-02"}},
-		{"Portfolio.SharesRemovedFromPortfolio", map[string]interface{}{"ticker": "MO", "price": float32(20.45), "shares": 5, "date": "2000-01-02"}},
-	}
-
-	if reflect.DeepEqual(got, want) == false {
-		t.Errorf("Unexpected event stream. got: %#v, want: %#v", got, want)
-	}
-}
-
 func TestDateHasToBeInValidFormatWhenAddingShares(t *testing.T) {
-	eventStream := infrastructure.InMemoryEventStream{}
-	p := ReconstitueFromStream(&eventStream)
+	state := initFakeState()
+	portfolio := Portfolio{&state}
 	command := AddSharesToPortfolioCommand("MO", 10, 20.45)
 	command.Date = "Foo"
-	err := p.AddSharesToPortfolio(command)
+
+	err := portfolio.AddSharesToPortfolio(command)
 
 	_, ok := err.(*UnsupportedDateFormatError)
 	if !ok {
@@ -100,14 +133,13 @@ func TestDateHasToBeInValidFormatWhenAddingShares(t *testing.T) {
 }
 
 func TestDateHasToBeInValidFormatWhenRemovingShares(t *testing.T) {
-	eventStream := infrastructure.InMemoryEventStream{}
-	p := ReconstitueFromStream(&eventStream)
-	addSharesCommand := AddSharesToPortfolioCommand("MO", 10, 20.45)
+	state := initFakeState()
+	state.numberOfSharesForTicker = map[string]int{"MO": 20}
+	portfolio := Portfolio{&state}
 	removeSharesCommand := RemoveSharesFromPortfolioCommand("MO", 10, 20.45)
 	removeSharesCommand.Date = "Foo"
 
-	p.AddSharesToPortfolio(addSharesCommand)
-	err := p.RemoveSharesFromPortfolio(removeSharesCommand)
+	err := portfolio.RemoveSharesFromPortfolio(removeSharesCommand)
 
 	_, ok := err.(*UnsupportedDateFormatError)
 	if !ok {
@@ -117,11 +149,12 @@ func TestDateHasToBeInValidFormatWhenRemovingShares(t *testing.T) {
 
 func TestDateCanNotBeInTheFutureWhenAddingShares(t *testing.T) {
 	today := time.Now()
-	eventStream := infrastructure.InMemoryEventStream{}
-	p := ReconstitueFromStream(&eventStream)
+	state := initFakeState()
+	portfolio := Portfolio{&state}
 	command := AddSharesToPortfolioCommand("MO", 10, 20.45)
 	command.Date = today.AddDate(0,0,1).Format("2006-01-02")
-	err := p.AddSharesToPortfolio(command)
+
+	err := portfolio.AddSharesToPortfolio(command)
 
 	_, ok := err.(*InvalidDateError)
 	if !ok {
@@ -131,15 +164,13 @@ func TestDateCanNotBeInTheFutureWhenAddingShares(t *testing.T) {
 
 func TestDateCanNotBeInTheFutureWhenRemovingShares(t *testing.T) {
 	today := time.Now()
-	eventStream := infrastructure.InMemoryEventStream{}
-	p := ReconstitueFromStream(&eventStream)
-	addSharesCommand := AddSharesToPortfolioCommand("MO", 10, 20.45)
+	state := initFakeState()
+	state.numberOfSharesForTicker = map[string]int{"MO": 20}
+	portfolio := Portfolio{&state}
 	removeSharesCommand := RemoveSharesFromPortfolioCommand("MO", 10, 20.45)
-	removeSharesCommand.Date = "Foo"
 	removeSharesCommand.Date = today.AddDate(0,0,1).Format("2006-01-02")
 
-	p.AddSharesToPortfolio(addSharesCommand)
-	err := p.RemoveSharesFromPortfolio(removeSharesCommand)
+	err := portfolio.RemoveSharesFromPortfolio(removeSharesCommand)
 
 	_, ok := err.(*InvalidDateError)
 	if !ok {
@@ -148,14 +179,13 @@ func TestDateCanNotBeInTheFutureWhenRemovingShares(t *testing.T) {
 }
 
 func TestDateCanNotBeOlderThanDateOfLastOrderWhenAddingShares(t *testing.T) {
-	events := []infrastructure.Event{
-		{"Portfolio.SharesAddedToPortfolio", map[string]interface{}{"ticker": "MO", "price": 20.45, "shares": 10, "date": "2020-01-02"}},
-	}
-	eventStream := infrastructure.InMemoryEventStream{events}
-	p := ReconstitueFromStream(&eventStream)
+	state := initFakeState()
+	state.lastOrderDate = "2020-01-02"
+	portfolio := Portfolio{&state}
 	command := AddSharesToPortfolioCommand("MO", 10, 20.45)
 	command.Date = "2020-01-01"
-	err := p.AddSharesToPortfolio(command)
+
+	err := portfolio.AddSharesToPortfolio(command)
 
 	_, ok := err.(*InvalidDateError)
 	if !ok {
@@ -164,14 +194,14 @@ func TestDateCanNotBeOlderThanDateOfLastOrderWhenAddingShares(t *testing.T) {
 }
 
 func TestDateCanNotBeOlderThanDateOfLastOrderWhenRemovingShares(t *testing.T) {
-	events := []infrastructure.Event{
-		{"Portfolio.SharesAddedToPortfolio", map[string]interface{}{"ticker": "MO", "price": 20.45, "shares": 10, "date": "2020-01-02"}},
-	}
-	eventStream := infrastructure.InMemoryEventStream{events}
-	p := ReconstitueFromStream(&eventStream)
+	state := initFakeState()
+	state.lastOrderDate = "2020-01-02"
+	state.numberOfSharesForTicker = map[string]int{"MO": 20}
+	portfolio := Portfolio{&state}
 	command := RemoveSharesFromPortfolioCommand("MO", 10, 20.45)
 	command.Date = "2020-01-01"
-	err := p.RemoveSharesFromPortfolio(command)
+
+	err := portfolio.RemoveSharesFromPortfolio(command)
 
 	_, ok := err.(*InvalidDateError)
 	if !ok {
