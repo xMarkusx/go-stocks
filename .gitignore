@@ -1,6 +1,7 @@
 store/*
 !store/.gitkeep
 stock-monitor
+*.out
 
 finnhub
 

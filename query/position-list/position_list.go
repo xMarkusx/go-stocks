@@ -1,19 +1,19 @@
 package positionList
 
 import (
+	"stock-monitor/domain/portfolio"
 	"stock-monitor/infrastructure"
-	"stock-monitor/portfolio"
 	"stock-monitor/query"
 )
 
 type Position struct {
-	Ticker string
-	Shares int
+	Ticker       string
+	Shares       int
 	CurrentValue float32
 }
 
 type PositionListQuery struct {
-	EventStream infrastructure.EventStream
+	EventStream  infrastructure.EventStream
 	ValueTracker query.ValueTracker
 }
 

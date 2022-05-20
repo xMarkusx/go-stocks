@@ -7,10 +7,10 @@ import (
 )
 
 type fakePortfolioState struct {
-	lastOrderDate string
+	lastOrderDate           string
 	numberOfSharesForTicker map[string]int
-	addOrders []addSharesToPortfolioCommand
-	removeOrders []removeSharesFromPortfolioCommand
+	addOrders               []map[string]interface{}
+	removeOrders            []map[string]interface{}
 }
 
 func (state *fakePortfolioState) GetNumberOfSharesForTicker(ticker string) int {
@@ -21,41 +21,53 @@ func (state *fakePortfolioState) GetDateOfLastOrder() string {
 	return state.lastOrderDate
 }
 
-func (state *fakePortfolioState) AddShares(command addSharesToPortfolioCommand) {
-	state.addOrders = append(state.addOrders, command)
+func (state *fakePortfolioState) AddShares(ticker string, shares int, date string) {
+	state.addOrders = append(state.addOrders, map[string]interface{}{
+		"ticker": ticker,
+		"shares": shares,
+		"date":   date,
+	})
 }
 
-func (state *fakePortfolioState) RemoveShares(command removeSharesFromPortfolioCommand) {
-	state.removeOrders = append(state.removeOrders, command)
+func (state *fakePortfolioState) RemoveShares(ticker string, shares int, date string) {
+	state.removeOrders = append(state.addOrders, map[string]interface{}{
+		"ticker": ticker,
+		"shares": shares,
+		"date":   date,
+	})
 }
 
 func initFakeState() fakePortfolioState {
-	return fakePortfolioState{"", map[string]int{}, []addSharesToPortfolioCommand{}, []removeSharesFromPortfolioCommand{}}
+	return fakePortfolioState{"", map[string]int{}, []map[string]interface{}{}, []map[string]interface{}{}}
 }
 
 func TestCanCreatePortfolio(t *testing.T) {
 	state := initFakeState()
 
 	portfolio := NewPortfolio(&state)
-	
+
 	expected := Portfolio{&state}
-	
+
 	if reflect.DeepEqual(portfolio, expected) == false {
 		t.Errorf("State not updated. Expected:%#v Got:%#v", expected, portfolio)
 	}
-} 
+}
 
 func TestCanAddShares(t *testing.T) {
 	state := initFakeState()
 	portfolio := Portfolio{&state}
-	command := AddSharesToPortfolioCommand("MO", 10, 20.45)
-	command.Date = "2000-01-02"
 
-	portfolio.AddSharesToPortfolio(command)
+	portfolio.AddSharesToPortfolio("MO", 10, "2000-01-02")
 
-	expected := []addSharesToPortfolioCommand{{"MO", 10, 20.45, "2000-01-02"}}
+	expected := []map[string]interface{}{
+		{
+			"ticker": "MO",
+			"shares": 10,
+			"date":   "2000-01-02",
+		},
+	}
 	got := state.addOrders
-	
+
 	if reflect.DeepEqual(got, expected) == false {
 		t.Errorf("State not updated. Expected:%#v Got:%#v", expected, got)
 	}
@@ -65,14 +77,18 @@ func TestCanRemoveShares(t *testing.T) {
 	state := initFakeState()
 	state.numberOfSharesForTicker = map[string]int{"MO": 11}
 	portfolio := Portfolio{&state}
-	command := RemoveSharesFromPortfolioCommand("MO", 10, 20.45)
-	command.Date = "2000-01-02"
 
-	portfolio.RemoveSharesFromPortfolio(command)
+	portfolio.RemoveSharesFromPortfolio("MO", 10, "2000-01-02")
 
-	expected := []removeSharesFromPortfolioCommand{{"MO", 10, 20.45, "2000-01-02"}}
+	expected := []map[string]interface{}{
+		{
+			"ticker": "MO",
+			"shares": 10,
+			"date":   "2000-01-02",
+		},
+	}
 	got := state.removeOrders
-	
+
 	if reflect.DeepEqual(got, expected) == false {
 		t.Errorf("State not updated. Expected:%#v Got:%#v", expected, got)
 	}
@@ -81,9 +97,8 @@ func TestCanRemoveShares(t *testing.T) {
 func TestCanNotBuyZeroShares(t *testing.T) {
 	state := initFakeState()
 	portfolio := Portfolio{&state}
-	command := AddSharesToPortfolioCommand("MO", 0, 20.45)
 
-	err := portfolio.AddSharesToPortfolio(command)
+	err := portfolio.AddSharesToPortfolio("MO", 0, "2000-01-02")
 
 	_, ok := err.(*InvalidNumbersOfSharesError)
 	if !ok {
@@ -94,9 +109,8 @@ func TestCanNotBuyZeroShares(t *testing.T) {
 func TestCanNotBuyNegativeNumberOfShares(t *testing.T) {
 	state := initFakeState()
 	portfolio := Portfolio{&state}
-	command := AddSharesToPortfolioCommand("MO", -10, 20.45)
 
-	err := portfolio.AddSharesToPortfolio(command)
+	err := portfolio.AddSharesToPortfolio("MO", -10, "2000-01-02")
 
 	_, ok := err.(*InvalidNumbersOfSharesError)
 	if !ok {
@@ -108,9 +122,7 @@ func TestCanNotSellMoreSharesThenCurrentlyInPortfolio(t *testing.T) {
 	state := initFakeState()
 	portfolio := Portfolio{&state}
 
-	removeSharesCommand := RemoveSharesFromPortfolioCommand("MO", 21, 20.45)
-
-	err := portfolio.RemoveSharesFromPortfolio(removeSharesCommand)
+	err := portfolio.RemoveSharesFromPortfolio("MO", 21, "2000-01-02")
 
 	_, ok := err.(*CantSellMoreSharesThanExistingError)
 	if !ok {
@@ -121,10 +133,8 @@ func TestCanNotSellMoreSharesThenCurrentlyInPortfolio(t *testing.T) {
 func TestDateHasToBeInValidFormatWhenAddingShares(t *testing.T) {
 	state := initFakeState()
 	portfolio := Portfolio{&state}
-	command := AddSharesToPortfolioCommand("MO", 10, 20.45)
-	command.Date = "Foo"
 
-	err := portfolio.AddSharesToPortfolio(command)
+	err := portfolio.AddSharesToPortfolio("MO", 10, "Foo")
 
 	_, ok := err.(*UnsupportedDateFormatError)
 	if !ok {
@@ -136,10 +146,8 @@ func TestDateHasToBeInValidFormatWhenRemovingShares(t *testing.T) {
 	state := initFakeState()
 	state.numberOfSharesForTicker = map[string]int{"MO": 20}
 	portfolio := Portfolio{&state}
-	removeSharesCommand := RemoveSharesFromPortfolioCommand("MO", 10, 20.45)
-	removeSharesCommand.Date = "Foo"
 
-	err := portfolio.RemoveSharesFromPortfolio(removeSharesCommand)
+	err := portfolio.RemoveSharesFromPortfolio("MO", 10, "Foo")
 
 	_, ok := err.(*UnsupportedDateFormatError)
 	if !ok {
@@ -151,10 +159,8 @@ func TestDateCanNotBeInTheFutureWhenAddingShares(t *testing.T) {
 	today := time.Now()
 	state := initFakeState()
 	portfolio := Portfolio{&state}
-	command := AddSharesToPortfolioCommand("MO", 10, 20.45)
-	command.Date = today.AddDate(0,0,1).Format("2006-01-02")
 
-	err := portfolio.AddSharesToPortfolio(command)
+	err := portfolio.AddSharesToPortfolio("MO", 10, today.AddDate(0, 0, 1).Format("2006-01-02"))
 
 	_, ok := err.(*InvalidDateError)
 	if !ok {
@@ -167,10 +173,8 @@ func TestDateCanNotBeInTheFutureWhenRemovingShares(t *testing.T) {
 	state := initFakeState()
 	state.numberOfSharesForTicker = map[string]int{"MO": 20}
 	portfolio := Portfolio{&state}
-	removeSharesCommand := RemoveSharesFromPortfolioCommand("MO", 10, 20.45)
-	removeSharesCommand.Date = today.AddDate(0,0,1).Format("2006-01-02")
 
-	err := portfolio.RemoveSharesFromPortfolio(removeSharesCommand)
+	err := portfolio.RemoveSharesFromPortfolio("MO", 10, today.AddDate(0, 0, 1).Format("2006-01-02"))
 
 	_, ok := err.(*InvalidDateError)
 	if !ok {
@@ -182,10 +186,8 @@ func TestDateCanNotBeOlderThanDateOfLastOrderWhenAddingShares(t *testing.T) {
 	state := initFakeState()
 	state.lastOrderDate = "2020-01-02"
 	portfolio := Portfolio{&state}
-	command := AddSharesToPortfolioCommand("MO", 10, 20.45)
-	command.Date = "2020-01-01"
 
-	err := portfolio.AddSharesToPortfolio(command)
+	err := portfolio.AddSharesToPortfolio("MO", 10, "2020-01-01")
 
 	_, ok := err.(*InvalidDateError)
 	if !ok {
@@ -198,10 +200,8 @@ func TestDateCanNotBeOlderThanDateOfLastOrderWhenRemovingShares(t *testing.T) {
 	state.lastOrderDate = "2020-01-02"
 	state.numberOfSharesForTicker = map[string]int{"MO": 20}
 	portfolio := Portfolio{&state}
-	command := RemoveSharesFromPortfolioCommand("MO", 10, 20.45)
-	command.Date = "2020-01-01"
 
-	err := portfolio.RemoveSharesFromPortfolio(command)
+	err := portfolio.RemoveSharesFromPortfolio("MO", 10, "2020-01-01")
 
 	_, ok := err.(*InvalidDateError)
 	if !ok {

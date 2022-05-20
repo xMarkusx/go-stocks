@@ -5,22 +5,25 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strconv"
-
+	"stock-monitor/application/portfolio/command"
+	"stock-monitor/application/portfolio/command_handler"
+	"stock-monitor/application/portfolio/event"
+	"stock-monitor/application/portfolio/persistence"
 	"stock-monitor/infrastructure"
-	"stock-monitor/portfolio"
 	"stock-monitor/query"
 	"stock-monitor/query/order-history"
 	"stock-monitor/query/position-list"
 	"stock-monitor/query/total-invested-money"
+	"strconv"
 
 	"github.com/urfave/cli/v2"
 )
 
 func main() {
 	portfolioEventStream := &infrastructure.FileSystemEventStream{"./store/", "portfolio_event_stream.gob"}
-	state := portfolio.NewEventBasedPortfolioState(portfolioEventStream)
-	p := portfolio.NewPortfolio(&state)
+	publisher := event.NewPortfolioEventPublisher(portfolioEventStream)
+	repository := persistence.NewEventSourcedPortfolioRepository(portfolioEventStream)
+	commandHandler := command_handler.NewCommandHandler(&repository, publisher)
 
 	app := &cli.App{
 		Commands: []*cli.Command{
@@ -29,19 +32,19 @@ func main() {
 				Aliases: []string{},
 				Usage:   "add a buy order",
 				Action: func(c *cli.Context) error {
-					ticker, price, shares, error := prepareOrderArgs(c.Args().Slice())
-					command := portfolio.AddSharesToPortfolioCommand(ticker, shares, price)
+					ticker, price, shares, err := prepareOrderArgs(c.Args().Slice())
+					addSharesCommand := command.NewAddSharesToPortfolioCommand(ticker, shares, price)
 					date, dateErr := getDate(c.Args().Slice())
 					if dateErr == nil {
-						command.Date = date
+						addSharesCommand.Date = date
 					}
 
-					if error == nil {
-						error = p.AddSharesToPortfolio(command)
+					if err == nil {
+						err = commandHandler.HandleAddSharesToPortfolio(addSharesCommand)
 					}
 
-					if error != nil {
-						fmt.Println(error.Error())
+					if err != nil {
+						fmt.Println(err.Error())
 
 						return cli.Exit("Failed to add order", 1)
 					}
@@ -55,19 +58,19 @@ func main() {
 				Aliases: []string{},
 				Usage:   "add a sell order",
 				Action: func(c *cli.Context) error {
-					ticker, price, shares, error := prepareOrderArgs(c.Args().Slice())
-					command := portfolio.RemoveSharesFromPortfolioCommand(ticker, shares, price)
+					ticker, price, shares, err := prepareOrderArgs(c.Args().Slice())
+					removeSharesCommand := command.NewRemoveSharesFromPortfolioCommand(ticker, shares, price)
 					date, dateErr := getDate(c.Args().Slice())
 					if dateErr == nil {
-						command.Date = date
+						removeSharesCommand.Date = date
 					}
 
-					if error == nil {
-						error = p.RemoveSharesFromPortfolio(command)
+					if err == nil {
+						err = commandHandler.HandleRemoveSharesFromPortfolio(removeSharesCommand)
 					}
 
-					if error != nil {
-						fmt.Println(error.Error())
+					if err != nil {
+						fmt.Println(err.Error())
 
 						return cli.Exit("Failed to add order", 1)
 					}

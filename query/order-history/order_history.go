@@ -1,8 +1,8 @@
 package orderHistory
 
-import(
+import (
+	"stock-monitor/domain/portfolio"
 	"stock-monitor/infrastructure"
-	"stock-monitor/portfolio"
 )
 
 type OrderHistoryQueryInterface interface {
@@ -10,11 +10,11 @@ type OrderHistoryQueryInterface interface {
 }
 
 type Order struct {
-	orderType string
-	ticker string
+	orderType      string
+	ticker         string
 	numberOfShares int
-	price float32
-	date string
+	price          float32
+	date           string
 }
 
 func (order *Order) Dto() (string, string, int, float32, string) {

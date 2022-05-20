@@ -1,4 +1,4 @@
-package portfolio
+package command
 
 import (
 	"reflect"
@@ -9,8 +9,8 @@ import (
 func TestAddSharesToPortfolioCommandHasTodayAsDefaultDate(t *testing.T) {
 	today := time.Now().Format("2006-01-02")
 
-	command := AddSharesToPortfolioCommand("MO", 20, 19.99)
-	expected := addSharesToPortfolioCommand{"MO", 20, 19.99, today}
+	command := NewAddSharesToPortfolioCommand("MO", 20, 19.99)
+	expected := AddSharesToPortfolioCommand{"MO", 20, 19.99, today}
 
 	if reflect.DeepEqual(command, expected) == false {
 		t.Errorf("Unexpected command. got: %#v, want: %#v", command, expected)
@@ -20,8 +20,8 @@ func TestAddSharesToPortfolioCommandHasTodayAsDefaultDate(t *testing.T) {
 func TestRemoveSharesFromPortfolioCommandHasTodayAsDefaultDate(t *testing.T) {
 	today := time.Now().Format("2006-01-02")
 
-	command := RemoveSharesFromPortfolioCommand("MO", 20, 19.99)
-	expected := removeSharesFromPortfolioCommand{"MO", 20, 19.99, today}
+	command := NewRemoveSharesFromPortfolioCommand("MO", 20, 19.99)
+	expected := RemoveSharesFromPortfolioCommand{"MO", 20, 19.99, today}
 
 	if reflect.DeepEqual(command, expected) == false {
 		t.Errorf("Unexpected command. got: %#v, want: %#v", command, expected)

@@ -1,8 +1,8 @@
 package totalInvestedMoney
 
 import (
+	"stock-monitor/domain/portfolio"
 	"stock-monitor/infrastructure"
-	"stock-monitor/portfolio"
 	"testing"
 )
 

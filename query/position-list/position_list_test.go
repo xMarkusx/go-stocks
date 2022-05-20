@@ -2,9 +2,9 @@ package positionList
 
 import (
 	"reflect"
-	"stock-monitor/portfolio"
-	"stock-monitor/query"
+	"stock-monitor/domain/portfolio"
 	"stock-monitor/infrastructure"
+	"stock-monitor/query"
 	"testing"
 )
 
