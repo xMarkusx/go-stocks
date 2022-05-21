@@ -18,27 +18,23 @@ func NewEventSourcedPortfolioRepository(eventStream infrastructure.EventStream) 
 }
 
 func (repository *EventSourcedPortfolioRepository) Load() portfolio.Portfolio {
-	state := repository.buildState()
-	return portfolio.NewPortfolio(&state)
-}
-
-func (repository *EventSourcedPortfolioRepository) buildState() portfolio.PortfolioState {
-	state := portfolio.NewPortfolioState()
+	p := portfolio.NewPortfolio()
 	for _, event := range repository.eventStream.Get() {
 		ticker := event.Payload["ticker"].(string)
 		shares := event.Payload["shares"].(int)
 		date, _ := event.Payload["date"].(string)
 
-		if event.Name == portfolio.SharesAddedToPortfolioEvent {
-			state.AddShares(ticker, shares, date)
+		if event.Name == portfolio.SharesAddedToPortfolioEventName {
+			domainEvent := portfolio.NewSharesAddedToPortfolioEvent(ticker, shares, 0.0, date)
+			p.Apply(&domainEvent)
 			continue
 		}
 
-		if event.Name == portfolio.SharesRemovedFromPortfolioEvent {
-			state.RemoveShares(ticker, shares, date)
+		if event.Name == portfolio.SharesRemovedFromPortfolioEventName {
+			domainEvent := portfolio.NewSharesRemovedFromPortfolioEvent(ticker, shares, 0.0, date)
+			p.Apply(&domainEvent)
 			continue
 		}
 	}
-
-	return state
+	return p
 }

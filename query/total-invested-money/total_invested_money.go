@@ -14,12 +14,12 @@ func (totalInvestedMoneyQuery *TotalInvestedMoneyQuery) GetTotalInvestedMoney() 
 	for _, event := range totalInvestedMoneyQuery.EventStream.Get() {
 		_, shares, price := extractEventData(event)
 
-		if event.Name == portfolio.SharesAddedToPortfolioEvent {
+		if event.Name == portfolio.SharesAddedToPortfolioEventName {
 			invested += price * float32(shares)
 			continue
 		}
 
-		if event.Name == portfolio.SharesRemovedFromPortfolioEvent {
+		if event.Name == portfolio.SharesRemovedFromPortfolioEventName {
 			invested -= price * float32(shares)
 			continue
 		}

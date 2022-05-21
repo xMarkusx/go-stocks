@@ -28,7 +28,7 @@ type OrderHistoryQuery struct {
 func (orderHistoryQuery *OrderHistoryQuery) GetOrders() []Order {
 	orders := []Order{}
 	for _, event := range orderHistoryQuery.EventStream.Get() {
-		if event.Name == portfolio.SharesAddedToPortfolioEvent {
+		if event.Name == portfolio.SharesAddedToPortfolioEventName {
 			ticker, shares, price, date := extractEventData(event)
 			order := Order{"BUY", ticker, shares, price, date}
 			orders = append(orders, order)
@@ -36,7 +36,7 @@ func (orderHistoryQuery *OrderHistoryQuery) GetOrders() []Order {
 			continue
 		}
 
-		if event.Name == portfolio.SharesRemovedFromPortfolioEvent {
+		if event.Name == portfolio.SharesRemovedFromPortfolioEventName {
 			ticker, shares, price, date := extractEventData(event)
 			order := Order{"SELL", ticker, shares, price, date}
 			orders = append(orders, order)

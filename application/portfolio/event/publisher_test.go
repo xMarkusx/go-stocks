@@ -2,56 +2,53 @@ package event
 
 import (
 	"reflect"
-	"stock-monitor/application/portfolio/command"
+	"stock-monitor/domain"
 	"stock-monitor/domain/portfolio"
 	"stock-monitor/infrastructure"
 	"testing"
 )
 
-func TestSharesAddedToPortfolioEventCanBePublished(t *testing.T) {
+func TestItPublishesMultipleDomainEvents(t *testing.T) {
 	eventStream := infrastructure.InMemoryEventStream{}
 	publisher := NewPortfolioEventPublisher(&eventStream)
-	addSharesCommand := command.NewAddSharesToPortfolioCommand("MO", 10, 9.99)
-	addSharesCommand.Date = "2000-01-01"
+	event1 := portfolio.NewSharesRemovedFromPortfolioEvent("MO", 20, 0.0, "2000-01-01")
+	event2 := portfolio.NewSharesAddedToPortfolioEvent("PG", 20, 0.0, "2000-01-02")
+	event3 := portfolio.NewSharesRemovedFromPortfolioEvent("MO", 10, 0.0, "2000-01-03")
 
-	publisher.PublishSharesAddedToPortfolioEvent(addSharesCommand)
+	publisher.PublishDomainEvents([]domain.DomainEvent{&event1, &event2, &event3})
 
-	expectedEvent := infrastructure.Event{
-		portfolio.SharesAddedToPortfolioEvent,
-		map[string]interface{}{
-			"ticker": "MO",
-			"shares": 10,
-			"price":  float32(9.99),
-			"date":   "2000-01-01",
+	expectedEvents := []infrastructure.Event{
+		{
+			portfolio.SharesRemovedFromPortfolioEventName,
+			map[string]interface{}{
+				"ticker": "MO",
+				"shares": 20,
+				"price":  float32(0.0),
+				"date":   "2000-01-01",
+			},
+		},
+		{
+			portfolio.SharesAddedToPortfolioEventName,
+			map[string]interface{}{
+				"ticker": "PG",
+				"shares": 20,
+				"price":  float32(0.0),
+				"date":   "2000-01-02",
+			},
+		},
+		{
+			portfolio.SharesRemovedFromPortfolioEventName,
+			map[string]interface{}{
+				"ticker": "MO",
+				"shares": 10,
+				"price":  float32(0.0),
+				"date":   "2000-01-03",
+			},
 		},
 	}
-	got := eventStream.Events[0]
+	got := eventStream.Events
 
-	if reflect.DeepEqual(got, expectedEvent) == false {
-		t.Errorf("Unexpected event published. Expected:%#v Got:%#v", expectedEvent, got)
-	}
-}
-
-func TestSharesRemovedFromPortfolioEventCanBePublished(t *testing.T) {
-	eventStream := infrastructure.InMemoryEventStream{}
-	publisher := NewPortfolioEventPublisher(&eventStream)
-	removeSharesCommand := command.NewRemoveSharesFromPortfolioCommand("MO", 10, 9.99)
-	removeSharesCommand.Date = "2000-01-01"
-
-	publisher.PublishSharesRemovedFromPortfolioEvent(removeSharesCommand)
-
-	expectedEvent := infrastructure.Event{
-		portfolio.SharesRemovedFromPortfolioEvent,
-		map[string]interface{}{
-			"ticker": "MO",
-			"shares": 10,
-			"price":  float32(9.99),
-			"date":   "2000-01-01",
-		},
-	}
-	got := eventStream.Events[0]
-
-	if reflect.DeepEqual(got, expectedEvent) == false {
-		t.Errorf("Unexpected event published. Expected:%#v Got:%#v", expectedEvent, got)
+	if reflect.DeepEqual(got, expectedEvents) == false {
+		t.Errorf("Unexpected events published. Expected:%#v Got:%#v", expectedEvents, got)
 	}
 }

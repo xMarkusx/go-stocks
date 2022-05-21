@@ -1,8 +1,7 @@
 package event
 
 import (
-	"stock-monitor/application/portfolio/command"
-	"stock-monitor/domain/portfolio"
+	"stock-monitor/domain"
 	"stock-monitor/infrastructure"
 )
 
@@ -14,29 +13,12 @@ func NewPortfolioEventPublisher(eventStream infrastructure.EventStream) Portfoli
 	return PortfolioEventPublisher{eventStream: eventStream}
 }
 
-func (publisher *PortfolioEventPublisher) PublishSharesAddedToPortfolioEvent(command command.AddSharesToPortfolioCommand) {
-	sharesAddedToPortfolioEvent := infrastructure.Event{
-		portfolio.SharesAddedToPortfolioEvent,
-		map[string]interface{}{
-			"ticker": command.Ticker,
-			"shares": command.NumberOfShares,
-			"price":  command.Price,
-			"date":   command.Date,
-		},
+func (publisher *PortfolioEventPublisher) PublishDomainEvents(events []domain.DomainEvent) {
+	for _, event := range events {
+		genericEvent := infrastructure.Event{
+			event.Name(),
+			event.Payload(),
+		}
+		publisher.eventStream.Add(genericEvent)
 	}
-
-	publisher.eventStream.Add(sharesAddedToPortfolioEvent)
-}
-func (publisher *PortfolioEventPublisher) PublishSharesRemovedFromPortfolioEvent(command command.RemoveSharesFromPortfolioCommand) {
-	sharesRemovedFromPortfolioEvent := infrastructure.Event{
-		portfolio.SharesRemovedFromPortfolioEvent,
-		map[string]interface{}{
-			"ticker": command.Ticker,
-			"shares": command.NumberOfShares,
-			"price":  command.Price,
-			"date":   command.Date,
-		},
-	}
-
-	publisher.eventStream.Add(sharesRemovedFromPortfolioEvent)
 }

@@ -7,34 +7,22 @@ import (
 	"testing"
 )
 
-func TestCanCreateRepository(t *testing.T) {
-	eventStream := infrastructure.InMemoryEventStream{}
-
-	repository := NewEventSourcedPortfolioRepository(&eventStream)
-
-	expected := EventSourcedPortfolioRepository{eventStream: &eventStream}
-
-	if reflect.DeepEqual(repository, expected) == false {
-		t.Errorf("Unexpected repository. Expected:%#v Got:%#v", expected, repository)
-	}
-}
-
 func TestEventsWillBeAppliedWhenLoadingPortfolio(t *testing.T) {
 	eventStream := infrastructure.InMemoryEventStream{
 		[]infrastructure.Event{
-			{portfolio.SharesRemovedFromPortfolioEvent, map[string]interface{}{
+			{portfolio.SharesRemovedFromPortfolioEventName, map[string]interface{}{
 				"ticker": "MO",
 				"shares": 20,
 				"price":  10.00,
 				"date":   "2000-01-01",
 			}},
-			{portfolio.SharesAddedToPortfolioEvent, map[string]interface{}{
+			{portfolio.SharesAddedToPortfolioEventName, map[string]interface{}{
 				"ticker": "PG",
 				"shares": 20,
 				"price":  10.00,
 				"date":   "2000-01-02",
 			}},
-			{portfolio.SharesRemovedFromPortfolioEvent, map[string]interface{}{
+			{portfolio.SharesRemovedFromPortfolioEventName, map[string]interface{}{
 				"ticker": "MO",
 				"shares": 10,
 				"price":  10.00,
@@ -46,11 +34,13 @@ func TestEventsWillBeAppliedWhenLoadingPortfolio(t *testing.T) {
 
 	p := repository.Load()
 
-	expectedState := portfolio.NewPortfolioState()
-	expectedState.RemoveShares("MO", 20, "2000-01-01")
-	expectedState.AddShares("PG", 20, "2000-01-01")
-	expectedState.RemoveShares("MO", 10, "2000-01-03")
-	expectedPortfolio := portfolio.NewPortfolio(&expectedState)
+	expectedPortfolio := portfolio.NewPortfolio()
+	event1 := portfolio.NewSharesRemovedFromPortfolioEvent("MO", 20, 10.00, "2000-01-01")
+	event2 := portfolio.NewSharesAddedToPortfolioEvent("PG", 20, 10.00, "2000-01-02")
+	event3 := portfolio.NewSharesRemovedFromPortfolioEvent("MO", 10, 10.00, "2000-01-03")
+	expectedPortfolio.Apply(&event1)
+	expectedPortfolio.Apply(&event2)
+	expectedPortfolio.Apply(&event3)
 
 	if reflect.DeepEqual(p, expectedPortfolio) == false {
 		t.Errorf("Unexpected portfolio state. Expected:%#v Got:%#v", expectedPortfolio, p)
@@ -60,7 +50,7 @@ func TestEventsWillBeAppliedWhenLoadingPortfolio(t *testing.T) {
 func TestEventsWithoutDateWillBeHandledAsEmptyDate(t *testing.T) {
 	eventStream := infrastructure.InMemoryEventStream{
 		[]infrastructure.Event{
-			{portfolio.SharesAddedToPortfolioEvent, map[string]interface{}{
+			{portfolio.SharesAddedToPortfolioEventName, map[string]interface{}{
 				"ticker": "MO",
 				"shares": 20,
 				"price":  10.00,
@@ -71,9 +61,9 @@ func TestEventsWithoutDateWillBeHandledAsEmptyDate(t *testing.T) {
 
 	p := repository.Load()
 
-	expectedState := portfolio.NewPortfolioState()
-	expectedState.AddShares("MO", 20, "")
-	expectedPortfolio := portfolio.NewPortfolio(&expectedState)
+	expectedPortfolio := portfolio.NewPortfolio()
+	event1 := portfolio.NewSharesAddedToPortfolioEvent("MO", 20, 10.00, "")
+	expectedPortfolio.Apply(&event1)
 
 	if reflect.DeepEqual(p, expectedPortfolio) == false {
 		t.Errorf("Unexpected portfolio state. Expected:%#v Got:%#v", expectedPortfolio, p)

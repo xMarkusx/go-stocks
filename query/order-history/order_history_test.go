@@ -9,9 +9,9 @@ import (
 
 func TestOrderHistoryProvidesAllOrders(t *testing.T) {
 	events := []infrastructure.Event{
-		{portfolio.SharesAddedToPortfolioEvent, map[string]interface{}{"ticker": "MO", "price": 20.45, "shares": 10, "date": "2001-01-02"}},
-		{portfolio.SharesAddedToPortfolioEvent, map[string]interface{}{"ticker": "PG", "price": 40.00, "shares": 20, "date": "2001-02-02"}},
-		{portfolio.SharesRemovedFromPortfolioEvent, map[string]interface{}{"ticker": "MO", "price": 40.00, "shares": 5, "date": "2002-01-02"}},
+		{portfolio.SharesAddedToPortfolioEventName, map[string]interface{}{"ticker": "MO", "price": 20.45, "shares": 10, "date": "2001-01-02"}},
+		{portfolio.SharesAddedToPortfolioEventName, map[string]interface{}{"ticker": "PG", "price": 40.00, "shares": 20, "date": "2001-02-02"}},
+		{portfolio.SharesRemovedFromPortfolioEventName, map[string]interface{}{"ticker": "MO", "price": 40.00, "shares": 5, "date": "2002-01-02"}},
 	}
 
 	orderHistoryQuery := OrderHistoryQuery{&infrastructure.InMemoryEventStream{events}}
@@ -29,7 +29,7 @@ func TestOrderHistoryProvidesAllOrders(t *testing.T) {
 
 func TestOrderHistoryCanHandleOrdersWithoutDate(t *testing.T) {
 	events := []infrastructure.Event{
-		{portfolio.SharesAddedToPortfolioEvent, map[string]interface{}{"ticker": "MO", "price": 20.45, "shares": 10}},
+		{portfolio.SharesAddedToPortfolioEventName, map[string]interface{}{"ticker": "MO", "price": 20.45, "shares": 10}},
 	}
 
 	orderHistoryQuery := OrderHistoryQuery{&infrastructure.InMemoryEventStream{events}}

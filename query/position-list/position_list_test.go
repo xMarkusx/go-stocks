@@ -10,9 +10,9 @@ import (
 
 func TestPositionListProvidesCompleteListOfPositions(t *testing.T) {
 	events := []infrastructure.Event{
-		{portfolio.SharesAddedToPortfolioEvent, map[string]interface{}{"ticker": "MO", "price": 20.45, "shares": 10}},
-		{portfolio.SharesAddedToPortfolioEvent, map[string]interface{}{"ticker": "MO", "price": 40.00, "shares": 20}},
-		{portfolio.SharesRemovedFromPortfolioEvent, map[string]interface{}{"ticker": "MO", "price": 40.00, "shares": 5}},
+		{portfolio.SharesAddedToPortfolioEventName, map[string]interface{}{"ticker": "MO", "price": 20.45, "shares": 10}},
+		{portfolio.SharesAddedToPortfolioEventName, map[string]interface{}{"ticker": "MO", "price": 40.00, "shares": 20}},
+		{portfolio.SharesRemovedFromPortfolioEventName, map[string]interface{}{"ticker": "MO", "price": 40.00, "shares": 5}},
 	}
 
 	valueTracker := query.FakeValueTracker{map[string]float32{"MO": 10.00}}
@@ -28,8 +28,8 @@ func TestPositionListProvidesCompleteListOfPositions(t *testing.T) {
 
 func TestPositionIsRemovedWhenCompletelySold(t *testing.T) {
 	events := []infrastructure.Event{
-		{portfolio.SharesAddedToPortfolioEvent, map[string]interface{}{"ticker": "MO", "price": 20.45, "shares": 20}},
-		{portfolio.SharesRemovedFromPortfolioEvent, map[string]interface{}{"ticker": "MO", "price": 20.45, "shares": 20}},
+		{portfolio.SharesAddedToPortfolioEventName, map[string]interface{}{"ticker": "MO", "price": 20.45, "shares": 20}},
+		{portfolio.SharesRemovedFromPortfolioEventName, map[string]interface{}{"ticker": "MO", "price": 20.45, "shares": 20}},
 	}
 
 	positionListQuery := PositionListQuery{&infrastructure.InMemoryEventStream{events}, query.FakeValueTracker{}}

@@ -1,11 +1,13 @@
 package portfolio
 
 import (
+	"stock-monitor/domain"
 	"time"
 )
 
 type Portfolio struct {
-	state State
+	state  State
+	events []domain.DomainEvent
 }
 
 type State interface {
@@ -15,11 +17,12 @@ type State interface {
 	GetDateOfLastOrder() string
 }
 
-func NewPortfolio(state State) Portfolio {
-	return Portfolio{state}
+func NewPortfolio() Portfolio {
+	state := NewPortfolioState()
+	return Portfolio{&state, []domain.DomainEvent{}}
 }
 
-func (portfolio *Portfolio) AddSharesToPortfolio(ticker string, shares int, date string) error {
+func (portfolio *Portfolio) AddSharesToPortfolio(ticker string, shares int, price float32, date string) error {
 	if shares <= 0 {
 		return &InvalidNumbersOfSharesError{"number of shares must be greater than 0"}
 	}
@@ -35,12 +38,13 @@ func (portfolio *Portfolio) AddSharesToPortfolio(ticker string, shares int, date
 		return &InvalidDateError{"Date can't older than date of last order. Got: " + date}
 	}
 
-	portfolio.state.AddShares(ticker, shares, date)
+	sharesAddedToPortfolioEvent := NewSharesAddedToPortfolioEvent(ticker, shares, price, date)
+	portfolio.events = append(portfolio.events, &sharesAddedToPortfolioEvent)
 
 	return nil
 }
 
-func (portfolio *Portfolio) RemoveSharesFromPortfolio(ticker string, shares int, date string) error {
+func (portfolio *Portfolio) RemoveSharesFromPortfolio(ticker string, shares int, price float32, date string) error {
 	if portfolio.state.GetNumberOfSharesForTicker(ticker) < shares {
 		return &CantSellMoreSharesThanExistingError{"not allowed to sell more shares than currently in portfolio"}
 	}
@@ -57,9 +61,34 @@ func (portfolio *Portfolio) RemoveSharesFromPortfolio(ticker string, shares int,
 		return &InvalidDateError{"Date can't older than date of last order. Got: " + date}
 	}
 
-	portfolio.state.RemoveShares(ticker, shares, date)
+	sharesRemovedFromPortfolioEvent := NewSharesRemovedFromPortfolioEvent(ticker, shares, price, date)
+	portfolio.events = append(portfolio.events, &sharesRemovedFromPortfolioEvent)
 
 	return nil
+}
+
+func (portfolio *Portfolio) Apply(event domain.DomainEvent) {
+	if event.Name() == SharesAddedToPortfolioEventName {
+		sharesAddedToPortfolioEvent := event.(*SharesAddedToPortfolioEvent)
+		portfolio.state.AddShares(
+			sharesAddedToPortfolioEvent.ticker,
+			sharesAddedToPortfolioEvent.shares,
+			sharesAddedToPortfolioEvent.date,
+		)
+		return
+	}
+	if event.Name() == SharesRemovedFromPortfolioEventName {
+		sharesRemovedFromPortfolioEvent := event.(*SharesRemovedFromPortfolioEvent)
+		portfolio.state.RemoveShares(
+			sharesRemovedFromPortfolioEvent.ticker,
+			sharesRemovedFromPortfolioEvent.shares,
+			sharesRemovedFromPortfolioEvent.date,
+		)
+	}
+}
+
+func (portfolio *Portfolio) GetRecordedEvents() []domain.DomainEvent {
+	return portfolio.events
 }
 
 func commandDateHasValidFormat(date string) bool {

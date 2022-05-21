@@ -21,7 +21,7 @@ func TestItHandlesAddSharesToPortfolioCommand(t *testing.T) {
 	commandHandler.HandleAddSharesToPortfolio(addSharesCommand)
 
 	expectedEvent := infrastructure.Event{
-		portfolio.SharesAddedToPortfolioEvent,
+		portfolio.SharesAddedToPortfolioEventName,
 		map[string]interface{}{
 			"ticker": "MO",
 			"shares": 10,
@@ -53,7 +53,7 @@ func TestItReturnsDomainErrorWhenAddSharesToPortfolioCommandFails(t *testing.T) 
 func TestSharesRemovedFromPortfolioEventCanBePublished(t *testing.T) {
 	eventStream := infrastructure.InMemoryEventStream{
 		[]infrastructure.Event{
-			{portfolio.SharesAddedToPortfolioEvent, map[string]interface{}{
+			{portfolio.SharesAddedToPortfolioEventName, map[string]interface{}{
 				"ticker": "MO",
 				"shares": 20,
 				"price":  10.00,
@@ -70,7 +70,7 @@ func TestSharesRemovedFromPortfolioEventCanBePublished(t *testing.T) {
 	commandHandler.HandleRemoveSharesFromPortfolio(removeSharesCommand)
 
 	expectedEvent := infrastructure.Event{
-		portfolio.SharesRemovedFromPortfolioEvent,
+		portfolio.SharesRemovedFromPortfolioEventName,
 		map[string]interface{}{
 			"ticker": "MO",
 			"shares": 10,

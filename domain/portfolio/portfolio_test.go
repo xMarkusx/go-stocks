@@ -2,103 +2,86 @@ package portfolio
 
 import (
 	"reflect"
+	"stock-monitor/domain"
 	"testing"
 	"time"
 )
 
-type fakePortfolioState struct {
-	lastOrderDate           string
-	numberOfSharesForTicker map[string]int
-	addOrders               []map[string]interface{}
-	removeOrders            []map[string]interface{}
-}
-
-func (state *fakePortfolioState) GetNumberOfSharesForTicker(ticker string) int {
-	return state.numberOfSharesForTicker[ticker]
-}
-
-func (state *fakePortfolioState) GetDateOfLastOrder() string {
-	return state.lastOrderDate
-}
-
-func (state *fakePortfolioState) AddShares(ticker string, shares int, date string) {
-	state.addOrders = append(state.addOrders, map[string]interface{}{
-		"ticker": ticker,
-		"shares": shares,
-		"date":   date,
-	})
-}
-
-func (state *fakePortfolioState) RemoveShares(ticker string, shares int, date string) {
-	state.removeOrders = append(state.addOrders, map[string]interface{}{
-		"ticker": ticker,
-		"shares": shares,
-		"date":   date,
-	})
-}
-
-func initFakeState() fakePortfolioState {
-	return fakePortfolioState{"", map[string]int{}, []map[string]interface{}{}, []map[string]interface{}{}}
-}
-
-func TestCanCreatePortfolio(t *testing.T) {
-	state := initFakeState()
-
-	portfolio := NewPortfolio(&state)
-
-	expected := Portfolio{&state}
-
-	if reflect.DeepEqual(portfolio, expected) == false {
-		t.Errorf("State not updated. Expected:%#v Got:%#v", expected, portfolio)
-	}
-}
-
 func TestCanAddShares(t *testing.T) {
-	state := initFakeState()
-	portfolio := Portfolio{&state}
+	portfolio := NewPortfolio()
 
-	portfolio.AddSharesToPortfolio("MO", 10, "2000-01-02")
-
-	expected := []map[string]interface{}{
-		{
-			"ticker": "MO",
-			"shares": 10,
-			"date":   "2000-01-02",
-		},
+	err := portfolio.AddSharesToPortfolio("MO", 10, 9.99, "2000-01-01")
+	if err != nil {
+		t.Errorf("Unexpected Error. %#v", err)
 	}
-	got := state.addOrders
 
-	if reflect.DeepEqual(got, expected) == false {
-		t.Errorf("State not updated. Expected:%#v Got:%#v", expected, got)
+	expectedEvent := NewSharesAddedToPortfolioEvent("MO", 10, 9.99, "2000-01-01")
+	expectedEventArray := []domain.DomainEvent{
+		&expectedEvent,
+	}
+	got := portfolio.GetRecordedEvents()
+
+	if reflect.DeepEqual(got, expectedEventArray) == false {
+		t.Errorf("Expected domain event missing. Expected:%#v Got:%#v", expectedEventArray, got)
 	}
 }
 
 func TestCanRemoveShares(t *testing.T) {
-	state := initFakeState()
-	state.numberOfSharesForTicker = map[string]int{"MO": 11}
-	portfolio := Portfolio{&state}
+	portfolio := NewPortfolio()
 
-	portfolio.RemoveSharesFromPortfolio("MO", 10, "2000-01-02")
-
-	expected := []map[string]interface{}{
-		{
-			"ticker": "MO",
-			"shares": 10,
-			"date":   "2000-01-02",
-		},
+	sharesAddedEvent := NewSharesAddedToPortfolioEvent("MO", 11, 9.99, "2000-01-01")
+	portfolio.Apply(&sharesAddedEvent)
+	err := portfolio.RemoveSharesFromPortfolio("MO", 10, 9.99, "2000-01-02")
+	if err != nil {
+		t.Errorf("Unexpected Error. %#v", err)
 	}
-	got := state.removeOrders
 
-	if reflect.DeepEqual(got, expected) == false {
-		t.Errorf("State not updated. Expected:%#v Got:%#v", expected, got)
+	expectedEvent := NewSharesRemovedFromPortfolioEvent("MO", 10, 9.99, "2000-01-02")
+	expectedEventArray := []domain.DomainEvent{
+		&expectedEvent,
+	}
+	got := portfolio.GetRecordedEvents()
+
+	if reflect.DeepEqual(got, expectedEventArray) == false {
+		t.Errorf("Expected domain event missing. Expected:%#v Got:%#v", expectedEventArray, got)
+	}
+}
+
+func TestSharesAddedToPortfolioEventCanBeApplied(t *testing.T) {
+	portfolio := NewPortfolio()
+
+	sharesAddedEvent := NewSharesAddedToPortfolioEvent("MO", 11, 9.99, "2000-01-01")
+	sharesAddedEvent2 := NewSharesAddedToPortfolioEvent("MO", 9, 9.99, "2000-01-02")
+	portfolio.Apply(&sharesAddedEvent)
+	portfolio.Apply(&sharesAddedEvent2)
+
+	err := portfolio.RemoveSharesFromPortfolio("MO", 20, 9.99, "2000-01-03")
+
+	if err != nil {
+		t.Errorf("Unexpected Error. %#v", err)
+	}
+}
+
+func TestSharesRemovedFromPortfolioEventCanBeApplied(t *testing.T) {
+	portfolio := NewPortfolio()
+
+	sharesAddedEvent := NewSharesAddedToPortfolioEvent("MO", 11, 9.99, "2000-01-01")
+	sharesRemovedEvent := NewSharesRemovedFromPortfolioEvent("MO", 11, 9.99, "2000-01-02")
+	portfolio.Apply(&sharesAddedEvent)
+	portfolio.Apply(&sharesRemovedEvent)
+
+	err := portfolio.RemoveSharesFromPortfolio("MO", 1, 9.99, "2000-01-03")
+
+	_, ok := err.(*CantSellMoreSharesThanExistingError)
+	if !ok {
+		t.Errorf("Expected CantSellMoreSharesThanExistingError but got %#v", err)
 	}
 }
 
 func TestCanNotBuyZeroShares(t *testing.T) {
-	state := initFakeState()
-	portfolio := Portfolio{&state}
+	portfolio := NewPortfolio()
 
-	err := portfolio.AddSharesToPortfolio("MO", 0, "2000-01-02")
+	err := portfolio.AddSharesToPortfolio("MO", 0, 9.99, "2000-01-02")
 
 	_, ok := err.(*InvalidNumbersOfSharesError)
 	if !ok {
@@ -107,10 +90,9 @@ func TestCanNotBuyZeroShares(t *testing.T) {
 }
 
 func TestCanNotBuyNegativeNumberOfShares(t *testing.T) {
-	state := initFakeState()
-	portfolio := Portfolio{&state}
+	portfolio := NewPortfolio()
 
-	err := portfolio.AddSharesToPortfolio("MO", -10, "2000-01-02")
+	err := portfolio.AddSharesToPortfolio("MO", -10, 9.99, "2000-01-02")
 
 	_, ok := err.(*InvalidNumbersOfSharesError)
 	if !ok {
@@ -119,10 +101,9 @@ func TestCanNotBuyNegativeNumberOfShares(t *testing.T) {
 }
 
 func TestCanNotSellMoreSharesThenCurrentlyInPortfolio(t *testing.T) {
-	state := initFakeState()
-	portfolio := Portfolio{&state}
+	portfolio := NewPortfolio()
 
-	err := portfolio.RemoveSharesFromPortfolio("MO", 21, "2000-01-02")
+	err := portfolio.RemoveSharesFromPortfolio("MO", 21, 9.99, "2000-01-02")
 
 	_, ok := err.(*CantSellMoreSharesThanExistingError)
 	if !ok {
@@ -131,10 +112,9 @@ func TestCanNotSellMoreSharesThenCurrentlyInPortfolio(t *testing.T) {
 }
 
 func TestDateHasToBeInValidFormatWhenAddingShares(t *testing.T) {
-	state := initFakeState()
-	portfolio := Portfolio{&state}
+	portfolio := NewPortfolio()
 
-	err := portfolio.AddSharesToPortfolio("MO", 10, "Foo")
+	err := portfolio.AddSharesToPortfolio("MO", 10, 9.99, "Foo")
 
 	_, ok := err.(*UnsupportedDateFormatError)
 	if !ok {
@@ -143,11 +123,11 @@ func TestDateHasToBeInValidFormatWhenAddingShares(t *testing.T) {
 }
 
 func TestDateHasToBeInValidFormatWhenRemovingShares(t *testing.T) {
-	state := initFakeState()
-	state.numberOfSharesForTicker = map[string]int{"MO": 20}
-	portfolio := Portfolio{&state}
+	portfolio := NewPortfolio()
+	sharesAddedEvent := NewSharesAddedToPortfolioEvent("MO", 20, 9.99, "2000-01-01")
+	portfolio.Apply(&sharesAddedEvent)
 
-	err := portfolio.RemoveSharesFromPortfolio("MO", 10, "Foo")
+	err := portfolio.RemoveSharesFromPortfolio("MO", 10, 9.99, "Foo")
 
 	_, ok := err.(*UnsupportedDateFormatError)
 	if !ok {
@@ -157,10 +137,9 @@ func TestDateHasToBeInValidFormatWhenRemovingShares(t *testing.T) {
 
 func TestDateCanNotBeInTheFutureWhenAddingShares(t *testing.T) {
 	today := time.Now()
-	state := initFakeState()
-	portfolio := Portfolio{&state}
+	portfolio := NewPortfolio()
 
-	err := portfolio.AddSharesToPortfolio("MO", 10, today.AddDate(0, 0, 1).Format("2006-01-02"))
+	err := portfolio.AddSharesToPortfolio("MO", 10, 9.99, today.AddDate(0, 0, 1).Format("2006-01-02"))
 
 	_, ok := err.(*InvalidDateError)
 	if !ok {
@@ -170,11 +149,11 @@ func TestDateCanNotBeInTheFutureWhenAddingShares(t *testing.T) {
 
 func TestDateCanNotBeInTheFutureWhenRemovingShares(t *testing.T) {
 	today := time.Now()
-	state := initFakeState()
-	state.numberOfSharesForTicker = map[string]int{"MO": 20}
-	portfolio := Portfolio{&state}
+	portfolio := NewPortfolio()
+	sharesAddedEvent := NewSharesAddedToPortfolioEvent("MO", 20, 9.99, "2000-01-01")
+	portfolio.Apply(&sharesAddedEvent)
 
-	err := portfolio.RemoveSharesFromPortfolio("MO", 10, today.AddDate(0, 0, 1).Format("2006-01-02"))
+	err := portfolio.RemoveSharesFromPortfolio("MO", 10, 9.99, today.AddDate(0, 0, 1).Format("2006-01-02"))
 
 	_, ok := err.(*InvalidDateError)
 	if !ok {
@@ -183,11 +162,11 @@ func TestDateCanNotBeInTheFutureWhenRemovingShares(t *testing.T) {
 }
 
 func TestDateCanNotBeOlderThanDateOfLastOrderWhenAddingShares(t *testing.T) {
-	state := initFakeState()
-	state.lastOrderDate = "2020-01-02"
-	portfolio := Portfolio{&state}
+	portfolio := NewPortfolio()
+	sharesAddedEvent := NewSharesAddedToPortfolioEvent("MO", 20, 9.99, "2020-01-02")
+	portfolio.Apply(&sharesAddedEvent)
 
-	err := portfolio.AddSharesToPortfolio("MO", 10, "2020-01-01")
+	err := portfolio.AddSharesToPortfolio("MO", 10, 9.99, "2020-01-01")
 
 	_, ok := err.(*InvalidDateError)
 	if !ok {
@@ -196,12 +175,11 @@ func TestDateCanNotBeOlderThanDateOfLastOrderWhenAddingShares(t *testing.T) {
 }
 
 func TestDateCanNotBeOlderThanDateOfLastOrderWhenRemovingShares(t *testing.T) {
-	state := initFakeState()
-	state.lastOrderDate = "2020-01-02"
-	state.numberOfSharesForTicker = map[string]int{"MO": 20}
-	portfolio := Portfolio{&state}
+	portfolio := NewPortfolio()
+	sharesAddedEvent := NewSharesAddedToPortfolioEvent("MO", 20, 9.99, "2020-01-02")
+	portfolio.Apply(&sharesAddedEvent)
 
-	err := portfolio.RemoveSharesFromPortfolio("MO", 10, "2020-01-01")
+	err := portfolio.RemoveSharesFromPortfolio("MO", 10, 9.99, "2020-01-01")
 
 	_, ok := err.(*InvalidDateError)
 	if !ok {
