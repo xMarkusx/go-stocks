@@ -42,3 +42,17 @@ func (commandHandler *CommandHandler) HandleRemoveSharesFromPortfolio(command co
 
 	return nil
 }
+
+func (commandHandler *CommandHandler) HandleRenameTicker(command command.RenameTickerCommand) error {
+	p := commandHandler.repository.Load()
+
+	err := p.RenameTicker(command.Old, command.New, command.Date)
+
+	if err != nil {
+		return err
+	}
+
+	commandHandler.publisher.PublishDomainEvents(p.GetRecordedEvents())
+
+	return nil
+}

@@ -31,3 +31,16 @@ func NewRemoveSharesFromPortfolioCommand(ticker string, numberOfShares int, pric
 
 	return command
 }
+
+type RenameTickerCommand struct {
+	Old  string
+	New  string
+	Date string
+}
+
+func NewRenameTickerCommand(old string, new string) RenameTickerCommand {
+	today := time.Now().Format("2006-01-02")
+	command := RenameTickerCommand{old, new, today}
+
+	return command
+}

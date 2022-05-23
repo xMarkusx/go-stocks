@@ -27,3 +27,14 @@ func TestRemoveSharesFromPortfolioCommandHasTodayAsDefaultDate(t *testing.T) {
 		t.Errorf("Unexpected command. got: %#v, want: %#v", command, expected)
 	}
 }
+
+func TestRenameTickerCommandHasTodayAsDefaultDate(t *testing.T) {
+	today := time.Now().Format("2006-01-02")
+
+	command := NewRenameTickerCommand("MO", "FOO")
+	expected := RenameTickerCommand{"MO", "FOO", today}
+
+	if reflect.DeepEqual(command, expected) == false {
+		t.Errorf("Unexpected command. got: %#v, want: %#v", command, expected)
+	}
+}

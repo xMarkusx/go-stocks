@@ -16,6 +16,14 @@ type InvalidDateError struct {
 	prob string
 }
 
+type TickerNotInPortfolioError struct {
+	prob string
+}
+
+type TickerAlreadyUsedError struct {
+	prob string
+}
+
 func (e *InvalidNumbersOfSharesError) Error() string {
 	return e.prob
 }
@@ -29,5 +37,13 @@ func (e *UnsupportedDateFormatError) Error() string {
 }
 
 func (e *InvalidDateError) Error() string {
+	return e.prob
+}
+
+func (e *TickerNotInPortfolioError) Error() string {
+	return e.prob
+}
+
+func (e *TickerAlreadyUsedError) Error() string {
 	return e.prob
 }

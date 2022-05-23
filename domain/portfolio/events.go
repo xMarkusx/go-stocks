@@ -2,6 +2,7 @@ package portfolio
 
 const SharesAddedToPortfolioEventName = "Portfolio.SharesAddedToPortfolio"
 const SharesRemovedFromPortfolioEventName = "Portfolio.SharesRemovedFromPortfolio"
+const TickerRenamedEventName = "Portfolio.TickerRenamed"
 
 type SharesAddedToPortfolioEvent struct {
 	ticker string
@@ -48,5 +49,27 @@ func (event *SharesRemovedFromPortfolioEvent) Payload() map[string]interface{} {
 		"shares": event.shares,
 		"price":  event.price,
 		"date":   event.date,
+	}
+}
+
+type TickerRenamedEvent struct {
+	old  string
+	new  string
+	date string
+}
+
+func NewTickerRenamedEvent(old string, new string, date string) TickerRenamedEvent {
+	return TickerRenamedEvent{old: old, new: new, date: date}
+}
+
+func (event *TickerRenamedEvent) Name() string {
+	return TickerRenamedEventName
+}
+
+func (event *TickerRenamedEvent) Payload() map[string]interface{} {
+	return map[string]interface{}{
+		"old":  event.old,
+		"new":  event.new,
+		"date": event.date,
 	}
 }

@@ -98,3 +98,37 @@ func TestItReturnsDomainErrorWhenRemoveSharesFromPortfolioCommandFails(t *testin
 		t.Errorf("Expected Error but got none")
 	}
 }
+
+func TestRenameTickerCommandIsHandled(t *testing.T) {
+	eventStream := infrastructure.InMemoryEventStream{
+		[]infrastructure.Event{
+			{portfolio.SharesAddedToPortfolioEventName, map[string]interface{}{
+				"ticker": "MO",
+				"shares": 20,
+				"price":  10.00,
+				"date":   "2000-01-01",
+			}},
+		},
+	}
+	publisher := event.NewPortfolioEventPublisher(&eventStream)
+	renameTickerCommand := command.NewRenameTickerCommand("MO", "FOO")
+	renameTickerCommand.Date = "2000-01-02"
+	repository := persistence.NewEventSourcedPortfolioRepository(&eventStream)
+	commandHandler := NewCommandHandler(&repository, publisher)
+
+	commandHandler.HandleRenameTicker(renameTickerCommand)
+
+	expectedEvent := infrastructure.Event{
+		portfolio.TickerRenamedEventName,
+		map[string]interface{}{
+			"old":  "MO",
+			"new":  "FOO",
+			"date": "2000-01-02",
+		},
+	}
+	got := eventStream.Events[1]
+
+	if reflect.DeepEqual(got, expectedEvent) == false {
+		t.Errorf("Unexpected event published. Expected:%#v Got:%#v", expectedEvent, got)
+	}
+}

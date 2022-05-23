@@ -6,20 +6,13 @@ import (
 )
 
 type Portfolio struct {
-	state  State
+	state  PortfolioState
 	events []domain.DomainEvent
-}
-
-type State interface {
-	AddShares(ticker string, shares int, date string)
-	RemoveShares(ticker string, shares int, date string)
-	GetNumberOfSharesForTicker(ticker string) int
-	GetDateOfLastOrder() string
 }
 
 func NewPortfolio() Portfolio {
 	state := NewPortfolioState()
-	return Portfolio{&state, []domain.DomainEvent{}}
+	return Portfolio{state, []domain.DomainEvent{}}
 }
 
 func (portfolio *Portfolio) AddSharesToPortfolio(ticker string, shares int, price float32, date string) error {
@@ -67,6 +60,34 @@ func (portfolio *Portfolio) RemoveSharesFromPortfolio(ticker string, shares int,
 	return nil
 }
 
+func (portfolio *Portfolio) RenameTicker(old string, new string, date string) error {
+	_, foundOld := portfolio.state.positions[old]
+	if !foundOld {
+		return &TickerNotInPortfolioError{"Ticker to be renamed not found. Ticker: " + old}
+	}
+	_, foundNew := portfolio.state.positions[new]
+	if foundNew {
+		return &TickerAlreadyUsedError{"New ticker symbol already in use. Ticker: " + new}
+	}
+
+	if !commandDateHasValidFormat(date) {
+		return &UnsupportedDateFormatError{"Unsupported date time format. Must be YYYY-MM-DD. Got: " + date}
+	}
+
+	if !dateIsInThePast(date) {
+		return &InvalidDateError{"Date can't be in the future. Got: " + date}
+	}
+
+	if !commandDateIsLaterThanLastOrderDate(date, portfolio.state.GetDateOfLastOrder()) {
+		return &InvalidDateError{"Date can't older than date of last order. Got: " + date}
+	}
+
+	tickerRenamedEvent := NewTickerRenamedEvent(old, new, date)
+	portfolio.events = append(portfolio.events, &tickerRenamedEvent)
+
+	return nil
+}
+
 func (portfolio *Portfolio) Apply(event domain.DomainEvent) {
 	if event.Name() == SharesAddedToPortfolioEventName {
 		sharesAddedToPortfolioEvent := event.(*SharesAddedToPortfolioEvent)
@@ -84,6 +105,12 @@ func (portfolio *Portfolio) Apply(event domain.DomainEvent) {
 			sharesRemovedFromPortfolioEvent.shares,
 			sharesRemovedFromPortfolioEvent.date,
 		)
+		return
+	}
+	if event.Name() == TickerRenamedEventName {
+		tickerRenamedEvent := event.(*TickerRenamedEvent)
+		portfolio.state.positions[tickerRenamedEvent.new] = portfolio.state.positions[tickerRenamedEvent.old]
+		delete(portfolio.state.positions, tickerRenamedEvent.old)
 	}
 }
 

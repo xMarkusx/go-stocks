@@ -40,3 +40,20 @@ func TestSharesRemovedFromPortfolioEventCanBeCreated(t *testing.T) {
 		t.Errorf("Unexpected event payload. Expected:%#v Got:%#v", expectedPayload, event.Payload())
 	}
 }
+
+func TestTickerRenamedEventEventCanBeCreated(t *testing.T) {
+	event := NewTickerRenamedEvent("MO", "FOO", "2000-01-01")
+
+	if event.Name() != TickerRenamedEventName {
+		t.Errorf("Unexpected events name. Expected:%#v Got:%#v", TickerRenamedEvent{}, event.Name())
+	}
+
+	expectedPayload := map[string]interface{}{
+		"old":  "MO",
+		"new":  "FOO",
+		"date": "2000-01-01",
+	}
+	if reflect.DeepEqual(event.Payload(), expectedPayload) == false {
+		t.Errorf("Unexpected event payload. Expected:%#v Got:%#v", expectedPayload, event.Payload())
+	}
+}

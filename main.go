@@ -80,6 +80,31 @@ func main() {
 				},
 			},
 			{
+				Name:    "rename",
+				Aliases: []string{},
+				Usage:   "rename a ticker in portfolio",
+				Action: func(c *cli.Context) error {
+					oldSymbol := c.Args().Slice()[0]
+					newSymbol := c.Args().Slice()[1]
+					renameTickerCommand := command.NewRenameTickerCommand(oldSymbol, newSymbol)
+					date, dateErr := getDate(c.Args().Slice())
+					if dateErr == nil {
+						renameTickerCommand.Date = date
+					}
+
+					err := commandHandler.HandleRenameTicker(renameTickerCommand)
+
+					if err != nil {
+						fmt.Println(err.Error())
+
+						return cli.Exit("Failed to rename ticker", 1)
+					}
+
+					fmt.Println("ticker renamed")
+					return nil
+				},
+			},
+			{
 				Name:    "show",
 				Aliases: []string{"s"},
 				Usage:   "show positions in portfolio",
