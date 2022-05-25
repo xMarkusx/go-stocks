@@ -30,9 +30,9 @@ func runPositionListProjection(eventStream infrastructure.EventStream) map[strin
 	positions := map[string]int{}
 
 	for _, event := range eventStream.Get() {
-		ticker, shares, _ := extractEventData(event)
-
 		if event.Name == portfolio.SharesAddedToPortfolioEventName {
+			ticker := event.Payload["ticker"].(string)
+			shares := event.Payload["shares"].(int)
 			currentShares, found := positions[ticker]
 			if !found {
 				positions[ticker] = shares
@@ -44,6 +44,8 @@ func runPositionListProjection(eventStream infrastructure.EventStream) map[strin
 		}
 
 		if event.Name == portfolio.SharesRemovedFromPortfolioEventName {
+			ticker := event.Payload["ticker"].(string)
+			shares := event.Payload["shares"].(int)
 			currentShares := positions[ticker]
 
 			if currentShares == shares {
@@ -54,18 +56,19 @@ func runPositionListProjection(eventStream infrastructure.EventStream) map[strin
 			positions[ticker] = currentShares - shares
 			continue
 		}
+
+		if event.Name == portfolio.TickerRenamedEventName {
+			oldSymbol := event.Payload["old"].(string)
+			newSymbol := event.Payload["new"].(string)
+
+			currentShares := positions[oldSymbol]
+			delete(positions, oldSymbol)
+
+			positions[newSymbol] = currentShares
+
+			continue
+		}
 	}
 
 	return positions
-}
-
-func extractEventData(event infrastructure.Event) (string, int, float32) {
-	ticker := event.Payload["ticker"].(string)
-	shares := event.Payload["shares"].(int)
-	price, ok := event.Payload["price"].(float32)
-	if !ok {
-		price = float32(event.Payload["price"].(float64))
-	}
-
-	return ticker, shares, price
 }

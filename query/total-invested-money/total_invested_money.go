@@ -12,14 +12,15 @@ type TotalInvestedMoneyQuery struct {
 func (totalInvestedMoneyQuery *TotalInvestedMoneyQuery) GetTotalInvestedMoney() float32 {
 	invested := float32(0.0)
 	for _, event := range totalInvestedMoneyQuery.EventStream.Get() {
-		_, shares, price := extractEventData(event)
 
 		if event.Name == portfolio.SharesAddedToPortfolioEventName {
+			shares, price := extractEventData(event)
 			invested += price * float32(shares)
 			continue
 		}
 
 		if event.Name == portfolio.SharesRemovedFromPortfolioEventName {
+			shares, price := extractEventData(event)
 			invested -= price * float32(shares)
 			continue
 		}
@@ -28,13 +29,12 @@ func (totalInvestedMoneyQuery *TotalInvestedMoneyQuery) GetTotalInvestedMoney() 
 	return invested
 }
 
-func extractEventData(event infrastructure.Event) (string, int, float32) {
-	ticker := event.Payload["ticker"].(string)
+func extractEventData(event infrastructure.Event) (int, float32) {
 	shares := event.Payload["shares"].(int)
 	price, ok := event.Payload["price"].(float32)
 	if !ok {
 		price = float32(event.Payload["price"].(float64))
 	}
 
-	return ticker, shares, price
+	return shares, price
 }
