@@ -15,6 +15,7 @@ import (
 	"stock-monitor/query/position-list"
 	"stock-monitor/query/total-invested-money"
 	"strconv"
+	"strings"
 
 	"github.com/urfave/cli/v2"
 )
@@ -125,10 +126,10 @@ func main() {
 				Usage:   "Shows history of all orders",
 				Action: func(c *cli.Context) error {
 					orderHistoryQuery := orderHistory.OrderHistoryQuery{portfolioEventStream}
-					fmt.Print("Order hsitory: \n")
+					fmt.Print("Order history: \n")
 					for _, order := range orderHistoryQuery.GetOrders() {
-						orderType, ticker, shares, price, date := order.Dto()
-						fmt.Printf("%#v | %#v - Ticker: %#v, shares: %#v, price: %#v\n", date, orderType, ticker, shares, price)
+						orderType, ticker, aliases, shares, price, date := order.Dto()
+						fmt.Printf("%#v | %#v - Ticker: %#v, Aliases: %s, shares: %#v, price: %#v\n", date, orderType, ticker, strings.Join(aliases, ", "), shares, price)
 					}
 
 					return nil

@@ -12,13 +12,14 @@ type OrderHistoryQueryInterface interface {
 type Order struct {
 	orderType      string
 	ticker         string
+	aliases        []string
 	numberOfShares int
 	price          float32
 	date           string
 }
 
-func (order *Order) Dto() (string, string, int, float32, string) {
-	return order.orderType, order.ticker, order.numberOfShares, order.price, order.date
+func (order *Order) Dto() (string, string, []string, int, float32, string) {
+	return order.orderType, order.ticker, order.aliases, order.numberOfShares, order.price, order.date
 }
 
 type OrderHistoryQuery struct {
@@ -27,10 +28,11 @@ type OrderHistoryQuery struct {
 
 func (orderHistoryQuery *OrderHistoryQuery) GetOrders() []Order {
 	orders := []Order{}
+	renames := []infrastructure.Event{}
 	for _, event := range orderHistoryQuery.EventStream.Get() {
 		if event.Name == portfolio.SharesAddedToPortfolioEventName {
 			ticker, shares, price, date := extractEventData(event)
-			order := Order{"BUY", ticker, shares, price, date}
+			order := Order{"BUY", ticker, []string{}, shares, price, date}
 			orders = append(orders, order)
 
 			continue
@@ -38,10 +40,26 @@ func (orderHistoryQuery *OrderHistoryQuery) GetOrders() []Order {
 
 		if event.Name == portfolio.SharesRemovedFromPortfolioEventName {
 			ticker, shares, price, date := extractEventData(event)
-			order := Order{"SELL", ticker, shares, price, date}
+			order := Order{"SELL", ticker, []string{}, shares, price, date}
 			orders = append(orders, order)
 
 			continue
+		}
+
+		if event.Name == portfolio.TickerRenamedEventName {
+			renames = append(renames, event)
+			continue
+		}
+	}
+
+	for _, renameEvent := range renames {
+		oldSymbol := renameEvent.Payload["old"].(string)
+		newSymbol := renameEvent.Payload["new"].(string)
+		for key, order := range orders {
+			if order.ticker == oldSymbol {
+				orders[key].ticker = newSymbol
+				orders[key].aliases = append(orders[key].aliases, oldSymbol)
+			}
 		}
 	}
 
