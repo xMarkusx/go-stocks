@@ -1,10 +1,11 @@
-package positionList
+package positionList_test
 
 import (
 	"reflect"
 	"stock-monitor/domain/portfolio"
 	"stock-monitor/infrastructure"
 	"stock-monitor/query"
+	positionList "stock-monitor/query/position-list"
 	"testing"
 )
 
@@ -29,9 +30,9 @@ func TestPositionListProvidesCompleteListOfPositions(t *testing.T) {
 
 	valueTracker := query.FakeValueTracker{map[string]float32{"MO": 10.00}}
 
-	positionListQuery := PositionListQuery{&infrastructure.InMemoryEventStream{events}, valueTracker}
+	positionListQuery := positionList.PositionListQuery{&infrastructure.InMemoryEventStream{events}, valueTracker}
 	got := positionListQuery.GetPositions()
-	want := map[string]Position{"MO": {"MO", 25, 250.00}}
+	want := map[string]positionList.Position{"MO": {"MO", 25, 250.00}}
 
 	if reflect.DeepEqual(got, want) == false {
 		t.Errorf("Positions unequal got: %#v, want: %#v", got, want)
@@ -52,7 +53,7 @@ func TestPositionIsRemovedWhenCompletelySold(t *testing.T) {
 		},
 	}
 
-	positionListQuery := PositionListQuery{&infrastructure.InMemoryEventStream{events}, query.FakeValueTracker{}}
+	positionListQuery := positionList.PositionListQuery{&infrastructure.InMemoryEventStream{events}, query.FakeValueTracker{}}
 	_, found := positionListQuery.GetPositions()["MO"]
 
 	if found {
@@ -86,9 +87,9 @@ func TestPositionListHandlesTickerRenames(t *testing.T) {
 
 	valueTracker := query.FakeValueTracker{map[string]float32{"FOO": 10.00}}
 
-	positionListQuery := PositionListQuery{&infrastructure.InMemoryEventStream{events}, valueTracker}
+	positionListQuery := positionList.PositionListQuery{&infrastructure.InMemoryEventStream{events}, valueTracker}
 	got := positionListQuery.GetPositions()
-	want := map[string]Position{"FOO": {"FOO", 25, 250.00}}
+	want := map[string]positionList.Position{"FOO": {"FOO", 25, 250.00}}
 
 	if reflect.DeepEqual(got, want) == false {
 		t.Errorf("Positions unequal got: %#v, want: %#v", got, want)
@@ -131,9 +132,9 @@ func TestPositionListHandlesMultipleTickerRenames(t *testing.T) {
 
 	valueTracker := query.FakeValueTracker{map[string]float32{"BAR": 10.00}}
 
-	positionListQuery := PositionListQuery{&infrastructure.InMemoryEventStream{events}, valueTracker}
+	positionListQuery := positionList.PositionListQuery{&infrastructure.InMemoryEventStream{events}, valueTracker}
 	got := positionListQuery.GetPositions()
-	want := map[string]Position{"BAR": {"BAR", 35, 350.00}}
+	want := map[string]positionList.Position{"BAR": {"BAR", 35, 350.00}}
 
 	if reflect.DeepEqual(got, want) == false {
 		t.Errorf("Positions unequal got: %#v, want: %#v", got, want)
