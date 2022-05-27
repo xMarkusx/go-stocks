@@ -1,8 +1,9 @@
-package totalInvestedMoney
+package totalInvestedMoney_test
 
 import (
 	"stock-monitor/domain/portfolio"
 	"stock-monitor/infrastructure"
+	totalInvestedMoney "stock-monitor/query/total-invested-money"
 	"testing"
 )
 
@@ -25,7 +26,7 @@ func TestPortfolioGivesTotalAmountOfInvestedMoney(t *testing.T) {
 		},
 	}
 
-	totalInvestedMoneyQuery := TotalInvestedMoneyQuery{&infrastructure.InMemoryEventStream{events}}
+	totalInvestedMoneyQuery := totalInvestedMoney.TotalInvestedMoneyQuery{&infrastructure.InMemoryEventStream{events}}
 
 	got := totalInvestedMoneyQuery.GetTotalInvestedMoney()
 	expected := float32(300)
