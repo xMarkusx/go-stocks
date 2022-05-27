@@ -183,17 +183,17 @@ func TestAddEvents(t *testing.T) {
 			want := []infrastructure.Event{
 				{
 					"EventName", map[string]interface{}{
-					"foo": "bar",
-				},
+						"foo": "bar",
+					},
 					map[string]interface{}{
 						"occurred_at": "2000-01-01",
 					},
 				},
 				{
 					"EventName2", map[string]interface{}{
-					"foo":    "buz",
-					"number": 3,
-				},
+						"foo":    "buz",
+						"number": 3,
+					},
 					map[string]interface{}{
 						"occurred_at": "2000-01-01",
 					},

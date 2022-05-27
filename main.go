@@ -128,8 +128,7 @@ func main() {
 					orderHistoryQuery := orderHistory.OrderHistoryQuery{portfolioEventStream}
 					fmt.Print("Order history: \n")
 					for _, order := range orderHistoryQuery.GetOrders() {
-						orderType, ticker, aliases, shares, price, date := order.Dto()
-						fmt.Printf("%#v | %#v - Ticker: %#v, Aliases: %s, shares: %#v, price: %#v\n", date, orderType, ticker, strings.Join(aliases, ", "), shares, price)
+						fmt.Printf("%#v | %#v - Ticker: %#v, Aliases: %s, shares: %#v, price: %#v\n", order.Date, order.OrderType, order.Ticker, strings.Join(order.Aliases, ", "), order.NumberOfShares, order.Price)
 					}
 
 					return nil

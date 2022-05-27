@@ -10,16 +10,12 @@ type OrderHistoryQueryInterface interface {
 }
 
 type Order struct {
-	orderType      string
-	ticker         string
-	aliases        []string
-	numberOfShares int
-	price          float32
-	date           string
-}
-
-func (order *Order) Dto() (string, string, []string, int, float32, string) {
-	return order.orderType, order.ticker, order.aliases, order.numberOfShares, order.price, order.date
+	OrderType      string
+	Ticker         string
+	Aliases        []string
+	NumberOfShares int
+	Price          float32
+	Date           string
 }
 
 type OrderHistoryQuery struct {
@@ -56,9 +52,9 @@ func (orderHistoryQuery *OrderHistoryQuery) GetOrders() []Order {
 		oldSymbol := renameEvent.Payload["old"].(string)
 		newSymbol := renameEvent.Payload["new"].(string)
 		for key, order := range orders {
-			if order.ticker == oldSymbol {
-				orders[key].ticker = newSymbol
-				orders[key].aliases = append(orders[key].aliases, oldSymbol)
+			if order.Ticker == oldSymbol {
+				orders[key].Ticker = newSymbol
+				orders[key].Aliases = append(orders[key].Aliases, oldSymbol)
 			}
 		}
 	}
