@@ -1,11 +1,12 @@
-package infrastructure
+package infrastructure_test
 
 import (
+	"stock-monitor/infrastructure"
 	"testing"
 )
 
 func TestUnsupportedDateFormatError(t *testing.T) {
-	err := &UnsupportedDateFormatError{"Error text"}
+	err := infrastructure.NewUnsupportedDateFormatError("Error text")
 
 	expected := "Error text"
 	got := err.Error()
@@ -16,7 +17,7 @@ func TestUnsupportedDateFormatError(t *testing.T) {
 }
 
 func TestInvalidDateError(t *testing.T) {
-	err := &InvalidDateError{"Error text"}
+	err := infrastructure.NewInvalidDateError("Error text")
 
 	expected := "Error text"
 	got := err.Error()

@@ -24,17 +24,17 @@ type InMemoryEventStream struct {
 func (eventStream *InMemoryEventStream) Add(event Event) error {
 	occurredAt, ok := event.MetaData["occurred_at"].(string)
 	if !ok || !commandDateHasValidFormat(occurredAt) {
-		return &UnsupportedDateFormatError{"Unsupported date time format. Must be YYYY-MM-DD. Got: " + occurredAt}
+		return NewUnsupportedDateFormatError("Unsupported date time format. Must be YYYY-MM-DD. Got: " + occurredAt)
 	}
 	if !occurredAtIsInThePast(occurredAt) {
-		return &InvalidDateError{"OccurredAt can't be in the future. Got: " + occurredAt}
+		return NewInvalidDateError("OccurredAt can't be in the future. Got: " + occurredAt)
 	}
 
 	if len(eventStream.Events) > 0 {
 		lastOccurredAt := eventStream.Events[len(eventStream.Events)-1].MetaData["occurred_at"].(string)
 
 		if !occurredAtIsLaterThanLastOccurredAt(occurredAt, lastOccurredAt) {
-			return &InvalidDateError{"OccurredAt can't be older than occurredAt of last event. Got: " + occurredAt}
+			return NewInvalidDateError("OccurredAt can't be older than occurredAt of last event. Got: " + occurredAt)
 		}
 	}
 
@@ -55,10 +55,10 @@ type FileSystemEventStream struct {
 func (eventStream *FileSystemEventStream) Add(event Event) error {
 	occurredAt, ok := event.MetaData["occurred_at"].(string)
 	if !ok || !commandDateHasValidFormat(occurredAt) {
-		return &UnsupportedDateFormatError{"Unsupported date time format. Must be YYYY-MM-DD. Got: " + occurredAt}
+		return NewUnsupportedDateFormatError("Unsupported date time format. Must be YYYY-MM-DD. Got: " + occurredAt)
 	}
 	if !occurredAtIsInThePast(occurredAt) {
-		return &InvalidDateError{"OccurredAt can't be in the future. Got: " + occurredAt}
+		return NewInvalidDateError("OccurredAt can't be in the future. Got: " + occurredAt)
 	}
 
 	events := []Event{}
@@ -68,7 +68,7 @@ func (eventStream *FileSystemEventStream) Add(event Event) error {
 		lastOccurredAt := events[len(events)-1].MetaData["occurred_at"].(string)
 
 		if !occurredAtIsLaterThanLastOccurredAt(occurredAt, lastOccurredAt) {
-			return &InvalidDateError{"OccurredAt can't be older than occurredAt of last event. Got: " + occurredAt}
+			return NewInvalidDateError("OccurredAt can't be older than occurredAt of last event. Got: " + occurredAt)
 		}
 	}
 
