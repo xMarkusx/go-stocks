@@ -1,7 +1,8 @@
-package event
+package event_test
 
 import (
 	"reflect"
+	"stock-monitor/application/portfolio/event"
 	"stock-monitor/domain"
 	"stock-monitor/domain/portfolio"
 	"stock-monitor/infrastructure"
@@ -10,7 +11,7 @@ import (
 
 func TestItPublishesMultipleDomainEvents(t *testing.T) {
 	eventStream := infrastructure.InMemoryEventStream{}
-	publisher := NewPortfolioEventPublisher(&eventStream)
+	publisher := event.NewPortfolioEventPublisher(&eventStream)
 	event1 := portfolio.NewSharesRemovedFromPortfolioEvent("MO", 20, 9.99)
 	event2 := portfolio.NewSharesAddedToPortfolioEvent("PG", 20, 9.99)
 	event3 := portfolio.NewSharesRemovedFromPortfolioEvent("MO", 10, 9.99)
@@ -55,7 +56,7 @@ func TestItPublishesMultipleDomainEvents(t *testing.T) {
 
 func TestItThrowsAnErrorIfAddingToEventStreamFails(t *testing.T) {
 	eventStream := infrastructure.InMemoryEventStream{}
-	publisher := NewPortfolioEventPublisher(&eventStream)
+	publisher := event.NewPortfolioEventPublisher(&eventStream)
 	event1 := portfolio.NewSharesRemovedFromPortfolioEvent("MO", 20, 9.99)
 
 	err := publisher.PublishDomainEvents([]domain.DomainEvent{&event1}, "FOO")
