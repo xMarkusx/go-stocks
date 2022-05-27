@@ -10,9 +10,21 @@ import (
 
 func TestPositionListProvidesCompleteListOfPositions(t *testing.T) {
 	events := []infrastructure.Event{
-		{portfolio.SharesAddedToPortfolioEventName, map[string]interface{}{"ticker": "MO", "price": 20.45, "shares": 10}},
-		{portfolio.SharesAddedToPortfolioEventName, map[string]interface{}{"ticker": "MO", "price": 40.00, "shares": 20}},
-		{portfolio.SharesRemovedFromPortfolioEventName, map[string]interface{}{"ticker": "MO", "price": 40.00, "shares": 5}},
+		{
+			portfolio.SharesAddedToPortfolioEventName,
+			map[string]interface{}{"ticker": "MO", "price": 20.45, "shares": 10},
+			map[string]interface{}{"occurred_at": "2001-01-02"},
+		},
+		{
+			portfolio.SharesAddedToPortfolioEventName,
+			map[string]interface{}{"ticker": "MO", "price": 40.00, "shares": 20},
+			map[string]interface{}{"occurred_at": "2001-01-02"},
+		},
+		{
+			portfolio.SharesRemovedFromPortfolioEventName,
+			map[string]interface{}{"ticker": "MO", "price": 40.00, "shares": 5},
+			map[string]interface{}{"occurred_at": "2001-01-02"},
+		},
 	}
 
 	valueTracker := query.FakeValueTracker{map[string]float32{"MO": 10.00}}
@@ -28,8 +40,16 @@ func TestPositionListProvidesCompleteListOfPositions(t *testing.T) {
 
 func TestPositionIsRemovedWhenCompletelySold(t *testing.T) {
 	events := []infrastructure.Event{
-		{portfolio.SharesAddedToPortfolioEventName, map[string]interface{}{"ticker": "MO", "price": 20.45, "shares": 20}},
-		{portfolio.SharesRemovedFromPortfolioEventName, map[string]interface{}{"ticker": "MO", "price": 20.45, "shares": 20}},
+		{
+			portfolio.SharesAddedToPortfolioEventName,
+			map[string]interface{}{"ticker": "MO", "price": 20.45, "shares": 20},
+			map[string]interface{}{"occurred_at": "2001-01-02"},
+		},
+		{
+			portfolio.SharesRemovedFromPortfolioEventName,
+			map[string]interface{}{"ticker": "MO", "price": 20.45, "shares": 20},
+			map[string]interface{}{"occurred_at": "2001-01-02"},
+		},
 	}
 
 	positionListQuery := PositionListQuery{&infrastructure.InMemoryEventStream{events}, query.FakeValueTracker{}}
@@ -42,10 +62,26 @@ func TestPositionIsRemovedWhenCompletelySold(t *testing.T) {
 
 func TestPositionListHandlesTickerRenames(t *testing.T) {
 	events := []infrastructure.Event{
-		{portfolio.SharesAddedToPortfolioEventName, map[string]interface{}{"ticker": "MO", "price": 20.45, "shares": 10, "date": "2002-01-01"}},
-		{portfolio.SharesAddedToPortfolioEventName, map[string]interface{}{"ticker": "MO", "price": 40.00, "shares": 20, "date": "2002-01-02"}},
-		{portfolio.TickerRenamedEventName, map[string]interface{}{"old": "MO", "new": "FOO", "date": "2002-01-03"}},
-		{portfolio.SharesRemovedFromPortfolioEventName, map[string]interface{}{"ticker": "FOO", "price": 40.00, "shares": 5, "date": "2002-01-04"}},
+		{
+			portfolio.SharesAddedToPortfolioEventName,
+			map[string]interface{}{"ticker": "MO", "price": 20.45, "shares": 10},
+			map[string]interface{}{"occurred_at": "2002-01-01"},
+		},
+		{
+			portfolio.SharesAddedToPortfolioEventName,
+			map[string]interface{}{"ticker": "MO", "price": 40.00, "shares": 20},
+			map[string]interface{}{"occurred_at": "2002-01-02"},
+		},
+		{
+			portfolio.TickerRenamedEventName,
+			map[string]interface{}{"old": "MO", "new": "FOO"},
+			map[string]interface{}{"occurred_at": "2002-01-03"},
+		},
+		{
+			portfolio.SharesRemovedFromPortfolioEventName,
+			map[string]interface{}{"ticker": "FOO", "price": 40.00, "shares": 5},
+			map[string]interface{}{"occurred_at": "2002-01-04"},
+		},
 	}
 
 	valueTracker := query.FakeValueTracker{map[string]float32{"FOO": 10.00}}
@@ -61,12 +97,36 @@ func TestPositionListHandlesTickerRenames(t *testing.T) {
 
 func TestPositionListHandlesMultipleTickerRenames(t *testing.T) {
 	events := []infrastructure.Event{
-		{portfolio.SharesAddedToPortfolioEventName, map[string]interface{}{"ticker": "MO", "price": 20.45, "shares": 10, "date": "2002-01-01"}},
-		{portfolio.SharesAddedToPortfolioEventName, map[string]interface{}{"ticker": "MO", "price": 40.00, "shares": 20, "date": "2002-01-02"}},
-		{portfolio.TickerRenamedEventName, map[string]interface{}{"old": "MO", "new": "FOO", "date": "2002-01-03"}},
-		{portfolio.SharesAddedToPortfolioEventName, map[string]interface{}{"ticker": "FOO", "price": 20.45, "shares": 10, "date": "2002-01-04"}},
-		{portfolio.TickerRenamedEventName, map[string]interface{}{"old": "FOO", "new": "BAR", "date": "2002-01-05"}},
-		{portfolio.SharesRemovedFromPortfolioEventName, map[string]interface{}{"ticker": "BAR", "price": 40.00, "shares": 5, "date": "2002-01-06"}},
+		{
+			portfolio.SharesAddedToPortfolioEventName,
+			map[string]interface{}{"ticker": "MO", "price": 20.45, "shares": 10},
+			map[string]interface{}{"occurred_at": "2002-01-01"},
+		},
+		{
+			portfolio.SharesAddedToPortfolioEventName,
+			map[string]interface{}{"ticker": "MO", "price": 40.00, "shares": 20},
+			map[string]interface{}{"occurred_at": "2002-01-02"},
+		},
+		{
+			portfolio.TickerRenamedEventName,
+			map[string]interface{}{"old": "MO", "new": "FOO"},
+			map[string]interface{}{"occurred_at": "2002-01-03"},
+		},
+		{
+			portfolio.SharesAddedToPortfolioEventName,
+			map[string]interface{}{"ticker": "FOO", "price": 20.45, "shares": 10},
+			map[string]interface{}{"occurred_at": "2002-01-04"},
+		},
+		{
+			portfolio.TickerRenamedEventName,
+			map[string]interface{}{"old": "FOO", "new": "BAR"},
+			map[string]interface{}{"occurred_at": "2002-01-05"},
+		},
+		{
+			portfolio.SharesRemovedFromPortfolioEventName,
+			map[string]interface{}{"ticker": "BAR", "price": 40.00, "shares": 5},
+			map[string]interface{}{"occurred_at": "2002-01-06"},
+		},
 	}
 
 	valueTracker := query.FakeValueTracker{map[string]float32{"BAR": 10.00}}

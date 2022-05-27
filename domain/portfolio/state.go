@@ -1,8 +1,7 @@
 package portfolio
 
 type PortfolioState struct {
-	positions     map[string]Position
-	lastOrderDate string
+	positions map[string]Position
 }
 
 type Position struct {
@@ -11,20 +10,14 @@ type Position struct {
 }
 
 func NewPortfolioState() PortfolioState {
-	return PortfolioState{map[string]Position{}, ""}
+	return PortfolioState{map[string]Position{}}
 }
 
 func (portfolioState *PortfolioState) GetNumberOfSharesForTicker(ticker string) int {
 	return portfolioState.positions[ticker].Shares
 }
 
-func (portfolioState *PortfolioState) GetDateOfLastOrder() string {
-	return portfolioState.lastOrderDate
-}
-
-func (portfolioState *PortfolioState) AddShares(ticker string, shares int, date string) {
-	portfolioState.lastOrderDate = date
-
+func (portfolioState *PortfolioState) AddShares(ticker string, shares int) {
 	p, found := portfolioState.positions[ticker]
 	if !found {
 		portfolioState.positions[ticker] = Position{ticker, shares}
@@ -34,9 +27,7 @@ func (portfolioState *PortfolioState) AddShares(ticker string, shares int, date 
 	}
 }
 
-func (portfolioState *PortfolioState) RemoveShares(ticker string, shares int, date string) {
-	portfolioState.lastOrderDate = date
-
+func (portfolioState *PortfolioState) RemoveShares(ticker string, shares int) {
 	p := portfolioState.positions[ticker]
 
 	p.Shares -= shares

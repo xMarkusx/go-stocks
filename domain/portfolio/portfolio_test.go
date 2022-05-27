@@ -4,18 +4,17 @@ import (
 	"reflect"
 	"stock-monitor/domain"
 	"testing"
-	"time"
 )
 
 func TestCanAddShares(t *testing.T) {
 	portfolio := NewPortfolio()
 
-	err := portfolio.AddSharesToPortfolio("MO", 10, 9.99, "2000-01-01")
+	err := portfolio.AddSharesToPortfolio("MO", 10, 9.99)
 	if err != nil {
 		t.Errorf("Unexpected Error. %#v", err)
 	}
 
-	expectedEvent := NewSharesAddedToPortfolioEvent("MO", 10, 9.99, "2000-01-01")
+	expectedEvent := NewSharesAddedToPortfolioEvent("MO", 10, 9.99)
 	expectedEventArray := []domain.DomainEvent{
 		&expectedEvent,
 	}
@@ -29,14 +28,14 @@ func TestCanAddShares(t *testing.T) {
 func TestCanRemoveShares(t *testing.T) {
 	portfolio := NewPortfolio()
 
-	sharesAddedEvent := NewSharesAddedToPortfolioEvent("MO", 11, 9.99, "2000-01-01")
+	sharesAddedEvent := NewSharesAddedToPortfolioEvent("MO", 11, 9.99)
 	portfolio.Apply(&sharesAddedEvent)
-	err := portfolio.RemoveSharesFromPortfolio("MO", 10, 9.99, "2000-01-02")
+	err := portfolio.RemoveSharesFromPortfolio("MO", 10, 9.99)
 	if err != nil {
 		t.Errorf("Unexpected Error. %#v", err)
 	}
 
-	expectedEvent := NewSharesRemovedFromPortfolioEvent("MO", 10, 9.99, "2000-01-02")
+	expectedEvent := NewSharesRemovedFromPortfolioEvent("MO", 10, 9.99)
 	expectedEventArray := []domain.DomainEvent{
 		&expectedEvent,
 	}
@@ -50,12 +49,12 @@ func TestCanRemoveShares(t *testing.T) {
 func TestSharesAddedToPortfolioEventCanBeApplied(t *testing.T) {
 	portfolio := NewPortfolio()
 
-	sharesAddedEvent := NewSharesAddedToPortfolioEvent("MO", 11, 9.99, "2000-01-01")
-	sharesAddedEvent2 := NewSharesAddedToPortfolioEvent("MO", 9, 9.99, "2000-01-02")
+	sharesAddedEvent := NewSharesAddedToPortfolioEvent("MO", 11, 9.99)
+	sharesAddedEvent2 := NewSharesAddedToPortfolioEvent("MO", 9, 9.99)
 	portfolio.Apply(&sharesAddedEvent)
 	portfolio.Apply(&sharesAddedEvent2)
 
-	err := portfolio.RemoveSharesFromPortfolio("MO", 20, 9.99, "2000-01-03")
+	err := portfolio.RemoveSharesFromPortfolio("MO", 20, 9.99)
 
 	if err != nil {
 		t.Errorf("Unexpected Error. %#v", err)
@@ -65,12 +64,12 @@ func TestSharesAddedToPortfolioEventCanBeApplied(t *testing.T) {
 func TestSharesRemovedFromPortfolioEventCanBeApplied(t *testing.T) {
 	portfolio := NewPortfolio()
 
-	sharesAddedEvent := NewSharesAddedToPortfolioEvent("MO", 11, 9.99, "2000-01-01")
-	sharesRemovedEvent := NewSharesRemovedFromPortfolioEvent("MO", 11, 9.99, "2000-01-02")
+	sharesAddedEvent := NewSharesAddedToPortfolioEvent("MO", 11, 9.99)
+	sharesRemovedEvent := NewSharesRemovedFromPortfolioEvent("MO", 11, 9.99)
 	portfolio.Apply(&sharesAddedEvent)
 	portfolio.Apply(&sharesRemovedEvent)
 
-	err := portfolio.RemoveSharesFromPortfolio("MO", 1, 9.99, "2000-01-03")
+	err := portfolio.RemoveSharesFromPortfolio("MO", 1, 9.99)
 
 	_, ok := err.(*CantSellMoreSharesThanExistingError)
 	if !ok {
@@ -81,7 +80,7 @@ func TestSharesRemovedFromPortfolioEventCanBeApplied(t *testing.T) {
 func TestCanNotBuyZeroShares(t *testing.T) {
 	portfolio := NewPortfolio()
 
-	err := portfolio.AddSharesToPortfolio("MO", 0, 9.99, "2000-01-02")
+	err := portfolio.AddSharesToPortfolio("MO", 0, 9.99)
 
 	_, ok := err.(*InvalidNumbersOfSharesError)
 	if !ok {
@@ -92,7 +91,7 @@ func TestCanNotBuyZeroShares(t *testing.T) {
 func TestCanNotBuyNegativeNumberOfShares(t *testing.T) {
 	portfolio := NewPortfolio()
 
-	err := portfolio.AddSharesToPortfolio("MO", -10, 9.99, "2000-01-02")
+	err := portfolio.AddSharesToPortfolio("MO", -10, 9.99)
 
 	_, ok := err.(*InvalidNumbersOfSharesError)
 	if !ok {
@@ -103,7 +102,7 @@ func TestCanNotBuyNegativeNumberOfShares(t *testing.T) {
 func TestCanNotSellMoreSharesThenCurrentlyInPortfolio(t *testing.T) {
 	portfolio := NewPortfolio()
 
-	err := portfolio.RemoveSharesFromPortfolio("MO", 21, 9.99, "2000-01-02")
+	err := portfolio.RemoveSharesFromPortfolio("MO", 21, 9.99)
 
 	_, ok := err.(*CantSellMoreSharesThanExistingError)
 	if !ok {
@@ -111,91 +110,15 @@ func TestCanNotSellMoreSharesThenCurrentlyInPortfolio(t *testing.T) {
 	}
 }
 
-func TestDateHasToBeInValidFormatWhenAddingShares(t *testing.T) {
-	portfolio := NewPortfolio()
-
-	err := portfolio.AddSharesToPortfolio("MO", 10, 9.99, "Foo")
-
-	_, ok := err.(*UnsupportedDateFormatError)
-	if !ok {
-		t.Errorf("Expected UnsupportedDateFormatError but got %#v", err)
-	}
-}
-
-func TestDateHasToBeInValidFormatWhenRemovingShares(t *testing.T) {
-	portfolio := NewPortfolio()
-	sharesAddedEvent := NewSharesAddedToPortfolioEvent("MO", 20, 9.99, "2000-01-01")
-	portfolio.Apply(&sharesAddedEvent)
-
-	err := portfolio.RemoveSharesFromPortfolio("MO", 10, 9.99, "Foo")
-
-	_, ok := err.(*UnsupportedDateFormatError)
-	if !ok {
-		t.Errorf("Expected UnsupportedDateFormatError but got %#v", err)
-	}
-}
-
-func TestDateCanNotBeInTheFutureWhenAddingShares(t *testing.T) {
-	today := time.Now()
-	portfolio := NewPortfolio()
-
-	err := portfolio.AddSharesToPortfolio("MO", 10, 9.99, today.AddDate(0, 0, 1).Format("2006-01-02"))
-
-	_, ok := err.(*InvalidDateError)
-	if !ok {
-		t.Errorf("Expected InvalidDateError but got %#v", err)
-	}
-}
-
-func TestDateCanNotBeInTheFutureWhenRemovingShares(t *testing.T) {
-	today := time.Now()
-	portfolio := NewPortfolio()
-	sharesAddedEvent := NewSharesAddedToPortfolioEvent("MO", 20, 9.99, "2000-01-01")
-	portfolio.Apply(&sharesAddedEvent)
-
-	err := portfolio.RemoveSharesFromPortfolio("MO", 10, 9.99, today.AddDate(0, 0, 1).Format("2006-01-02"))
-
-	_, ok := err.(*InvalidDateError)
-	if !ok {
-		t.Errorf("Expected InvalidDateError but got %#v", err)
-	}
-}
-
-func TestDateCanNotBeOlderThanDateOfLastOrderWhenAddingShares(t *testing.T) {
-	portfolio := NewPortfolio()
-	sharesAddedEvent := NewSharesAddedToPortfolioEvent("MO", 20, 9.99, "2020-01-02")
-	portfolio.Apply(&sharesAddedEvent)
-
-	err := portfolio.AddSharesToPortfolio("MO", 10, 9.99, "2020-01-01")
-
-	_, ok := err.(*InvalidDateError)
-	if !ok {
-		t.Errorf("Expected InvalidDateError but got %#v", err)
-	}
-}
-
-func TestDateCanNotBeOlderThanDateOfLastOrderWhenRemovingShares(t *testing.T) {
-	portfolio := NewPortfolio()
-	sharesAddedEvent := NewSharesAddedToPortfolioEvent("MO", 20, 9.99, "2020-01-02")
-	portfolio.Apply(&sharesAddedEvent)
-
-	err := portfolio.RemoveSharesFromPortfolio("MO", 10, 9.99, "2020-01-01")
-
-	_, ok := err.(*InvalidDateError)
-	if !ok {
-		t.Errorf("Expected InvalidDateError but got %#v", err)
-	}
-}
-
 func TestTickerCanBeRenamed(t *testing.T) {
 	portfolio := NewPortfolio()
 
-	sharesAddedEvent := NewSharesAddedToPortfolioEvent("MO", 11, 9.99, "2000-01-01")
+	sharesAddedEvent := NewSharesAddedToPortfolioEvent("MO", 11, 9.99)
 	portfolio.Apply(&sharesAddedEvent)
 
-	portfolio.RenameTicker("MO", "FOO", "2000-01-02")
+	portfolio.RenameTicker("MO", "FOO")
 
-	expectedEvent := NewTickerRenamedEvent("MO", "FOO", "2000-01-02")
+	expectedEvent := NewTickerRenamedEvent("MO", "FOO")
 	expectedEventArray := []domain.DomainEvent{
 		&expectedEvent,
 	}
@@ -209,10 +132,10 @@ func TestTickerCanBeRenamed(t *testing.T) {
 func TestTickerHasToBePresentInPortfolioToBeRenamed(t *testing.T) {
 	portfolio := NewPortfolio()
 
-	sharesAddedEvent := NewSharesAddedToPortfolioEvent("MO", 11, 9.99, "2000-01-01")
+	sharesAddedEvent := NewSharesAddedToPortfolioEvent("MO", 11, 9.99)
 	portfolio.Apply(&sharesAddedEvent)
 
-	err := portfolio.RenameTicker("PG", "FOO", "2000-01-02")
+	err := portfolio.RenameTicker("PG", "FOO")
 
 	_, ok := err.(*TickerNotInPortfolioError)
 	if !ok {
@@ -223,12 +146,12 @@ func TestTickerHasToBePresentInPortfolioToBeRenamed(t *testing.T) {
 func TestTickerCanBeRenamedEvenIfThereAreNoSharesHeld(t *testing.T) {
 	portfolio := NewPortfolio()
 
-	sharesAddedEvent := NewSharesAddedToPortfolioEvent("MO", 1, 9.99, "2000-01-01")
-	removeSharesEvent := NewSharesRemovedFromPortfolioEvent("MO", 1, 9.99, "2000-01-02")
+	sharesAddedEvent := NewSharesAddedToPortfolioEvent("MO", 1, 9.99)
+	removeSharesEvent := NewSharesRemovedFromPortfolioEvent("MO", 1, 9.99)
 	portfolio.Apply(&sharesAddedEvent)
 	portfolio.Apply(&removeSharesEvent)
 
-	err := portfolio.RenameTicker("MO", "FOO", "2000-01-02")
+	err := portfolio.RenameTicker("MO", "FOO")
 
 	if err != nil {
 		t.Errorf("Got unexpected error: %#v", err)
@@ -238,12 +161,12 @@ func TestTickerCanBeRenamedEvenIfThereAreNoSharesHeld(t *testing.T) {
 func TestNewTickerMustNotBeAlreadyInPortfolio(t *testing.T) {
 	portfolio := NewPortfolio()
 
-	sharesAddedEvent := NewSharesAddedToPortfolioEvent("MO", 11, 9.99, "2000-01-01")
-	sharesAddedEvent2 := NewSharesAddedToPortfolioEvent("PG", 11, 9.99, "2000-01-01")
+	sharesAddedEvent := NewSharesAddedToPortfolioEvent("MO", 11, 9.99)
+	sharesAddedEvent2 := NewSharesAddedToPortfolioEvent("PG", 11, 9.99)
 	portfolio.Apply(&sharesAddedEvent)
 	portfolio.Apply(&sharesAddedEvent2)
 
-	err := portfolio.RenameTicker("MO", "PG", "2000-01-02")
+	err := portfolio.RenameTicker("MO", "PG")
 
 	_, ok := err.(*TickerAlreadyUsedError)
 	if !ok {
@@ -254,54 +177,14 @@ func TestNewTickerMustNotBeAlreadyInPortfolio(t *testing.T) {
 func TestNewTickerWillBeUsedForAnyNewPortfolioCommands(t *testing.T) {
 	portfolio := NewPortfolio()
 
-	sharesAddedEvent := NewSharesAddedToPortfolioEvent("MO", 1, 9.99, "2000-01-01")
-	renameEvent := NewTickerRenamedEvent("MO", "FOO", "2000-01-02")
+	sharesAddedEvent := NewSharesAddedToPortfolioEvent("MO", 1, 9.99)
+	renameEvent := NewTickerRenamedEvent("MO", "FOO")
 	portfolio.Apply(&sharesAddedEvent)
 	portfolio.Apply(&renameEvent)
 
-	err := portfolio.RemoveSharesFromPortfolio("FOO", 1, 9.99, "2000-01-03")
+	err := portfolio.RemoveSharesFromPortfolio("FOO", 1, 9.99)
 
 	if err != nil {
 		t.Errorf("Got unexpected error: %#v", err)
-	}
-}
-
-func TestDateHasToBeInValidFormatWhenRenamingTicker(t *testing.T) {
-	portfolio := NewPortfolio()
-	sharesAddedEvent := NewSharesAddedToPortfolioEvent("MO", 20, 9.99, "2000-01-01")
-	portfolio.Apply(&sharesAddedEvent)
-
-	err := portfolio.RenameTicker("MO", "FOO", "Foo")
-
-	_, ok := err.(*UnsupportedDateFormatError)
-	if !ok {
-		t.Errorf("Expected UnsupportedDateFormatError but got %#v", err)
-	}
-}
-
-func TestDateCanNotBeInTheFutureWhenRenamingTicker(t *testing.T) {
-	today := time.Now()
-	portfolio := NewPortfolio()
-	sharesAddedEvent := NewSharesAddedToPortfolioEvent("MO", 20, 9.99, "2000-01-01")
-	portfolio.Apply(&sharesAddedEvent)
-
-	err := portfolio.RenameTicker("MO", "FOO", today.AddDate(0, 0, 1).Format("2006-01-02"))
-
-	_, ok := err.(*InvalidDateError)
-	if !ok {
-		t.Errorf("Expected InvalidDateError but got %#v", err)
-	}
-}
-
-func TestDateCanNotBeOlderThanDateOfLastOrderWhenRenamingTicker(t *testing.T) {
-	portfolio := NewPortfolio()
-	sharesAddedEvent := NewSharesAddedToPortfolioEvent("MO", 20, 9.99, "2020-01-02")
-	portfolio.Apply(&sharesAddedEvent)
-
-	err := portfolio.RenameTicker("MO", "FOO", "2020-01-01")
-
-	_, ok := err.(*InvalidDateError)
-	if !ok {
-		t.Errorf("Expected InvalidDateError but got %#v", err)
 	}
 }

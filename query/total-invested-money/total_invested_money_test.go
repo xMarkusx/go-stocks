@@ -8,9 +8,21 @@ import (
 
 func TestPortfolioGivesTotalAmountOfInvestedMoney(t *testing.T) {
 	events := []infrastructure.Event{
-		{portfolio.SharesAddedToPortfolioEventName, map[string]interface{}{"ticker": "MO", "price": 20.00, "shares": 20}},
-		{portfolio.SharesRemovedFromPortfolioEventName, map[string]interface{}{"ticker": "MO", "price": 30.00, "shares": 10}},
-		{portfolio.SharesAddedToPortfolioEventName, map[string]interface{}{"ticker": "PG", "price": 40.00, "shares": 5}},
+		{
+			portfolio.SharesAddedToPortfolioEventName,
+			map[string]interface{}{"ticker": "MO", "price": 20.00, "shares": 20},
+			map[string]interface{}{"occurred_at": "2001-01-02"},
+		},
+		{
+			portfolio.SharesRemovedFromPortfolioEventName,
+			map[string]interface{}{"ticker": "MO", "price": 30.00, "shares": 10},
+			map[string]interface{}{"occurred_at": "2001-01-02"},
+		},
+		{
+			portfolio.SharesAddedToPortfolioEventName,
+			map[string]interface{}{"ticker": "PG", "price": 40.00, "shares": 5},
+			map[string]interface{}{"occurred_at": "2001-01-02"},
+		},
 	}
 
 	totalInvestedMoneyQuery := TotalInvestedMoneyQuery{&infrastructure.InMemoryEventStream{events}}

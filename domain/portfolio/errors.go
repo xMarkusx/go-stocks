@@ -8,14 +8,6 @@ type CantSellMoreSharesThanExistingError struct {
 	prob string
 }
 
-type UnsupportedDateFormatError struct {
-	prob string
-}
-
-type InvalidDateError struct {
-	prob string
-}
-
 type TickerNotInPortfolioError struct {
 	prob string
 }
@@ -29,14 +21,6 @@ func (e *InvalidNumbersOfSharesError) Error() string {
 }
 
 func (e *CantSellMoreSharesThanExistingError) Error() string {
-	return e.prob
-}
-
-func (e *UnsupportedDateFormatError) Error() string {
-	return e.prob
-}
-
-func (e *InvalidDateError) Error() string {
 	return e.prob
 }
 

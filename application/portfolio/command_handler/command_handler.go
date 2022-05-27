@@ -18,13 +18,17 @@ func NewCommandHandler(repository persistence.PortfolioRepository, publisher eve
 func (commandHandler *CommandHandler) HandleAddSharesToPortfolio(command command.AddSharesToPortfolioCommand) error {
 	p := commandHandler.repository.Load()
 
-	err := p.AddSharesToPortfolio(command.Ticker, command.NumberOfShares, command.Price, command.Date)
+	err := p.AddSharesToPortfolio(command.Ticker, command.NumberOfShares, command.Price)
 
 	if err != nil {
 		return err
 	}
 
-	commandHandler.publisher.PublishDomainEvents(p.GetRecordedEvents())
+	err = commandHandler.publisher.PublishDomainEvents(p.GetRecordedEvents(), command.Date)
+
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -32,13 +36,17 @@ func (commandHandler *CommandHandler) HandleAddSharesToPortfolio(command command
 func (commandHandler *CommandHandler) HandleRemoveSharesFromPortfolio(command command.RemoveSharesFromPortfolioCommand) error {
 	p := commandHandler.repository.Load()
 
-	err := p.RemoveSharesFromPortfolio(command.Ticker, command.NumberOfShares, command.Price, command.Date)
+	err := p.RemoveSharesFromPortfolio(command.Ticker, command.NumberOfShares, command.Price)
 
 	if err != nil {
 		return err
 	}
 
-	commandHandler.publisher.PublishDomainEvents(p.GetRecordedEvents())
+	err = commandHandler.publisher.PublishDomainEvents(p.GetRecordedEvents(), command.Date)
+
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -46,13 +54,17 @@ func (commandHandler *CommandHandler) HandleRemoveSharesFromPortfolio(command co
 func (commandHandler *CommandHandler) HandleRenameTicker(command command.RenameTickerCommand) error {
 	p := commandHandler.repository.Load()
 
-	err := p.RenameTicker(command.Old, command.New, command.Date)
+	err := p.RenameTicker(command.Old, command.New)
 
 	if err != nil {
 		return err
 	}
 
-	commandHandler.publisher.PublishDomainEvents(p.GetRecordedEvents())
+	err = commandHandler.publisher.PublishDomainEvents(p.GetRecordedEvents(), command.Date)
+
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

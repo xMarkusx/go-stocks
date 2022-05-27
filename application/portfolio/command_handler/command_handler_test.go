@@ -26,8 +26,8 @@ func TestItHandlesAddSharesToPortfolioCommand(t *testing.T) {
 			"ticker": "MO",
 			"shares": 10,
 			"price":  float32(9.99),
-			"date":   "2000-01-01",
 		},
+		map[string]interface{}{"occurred_at": "2000-01-01"},
 	}
 	got := eventStream.Events[0]
 
@@ -36,7 +36,7 @@ func TestItHandlesAddSharesToPortfolioCommand(t *testing.T) {
 	}
 }
 
-func TestItReturnsDomainErrorWhenAddSharesToPortfolioCommandFails(t *testing.T) {
+func TestItReturnsErrorWhenAddSharesToPortfolioCommandFails(t *testing.T) {
 	eventStream := infrastructure.InMemoryEventStream{}
 	publisher := event.NewPortfolioEventPublisher(&eventStream)
 	addSharesCommand := command.NewAddSharesToPortfolioCommand("MO", 0, 9.99)
@@ -50,15 +50,33 @@ func TestItReturnsDomainErrorWhenAddSharesToPortfolioCommandFails(t *testing.T) 
 	}
 }
 
+func TestItReturnsErrorWhenPublishingEventAfterAddSharesCommandFails(t *testing.T) {
+	eventStream := infrastructure.InMemoryEventStream{}
+	publisher := event.NewPortfolioEventPublisher(&eventStream)
+	addSharesCommand := command.NewAddSharesToPortfolioCommand("MO", 1, 9.99)
+	addSharesCommand.Date = "FOO"
+	repository := persistence.NewEventSourcedPortfolioRepository(&eventStream)
+	commandHandler := NewCommandHandler(&repository, publisher)
+
+	err := commandHandler.HandleAddSharesToPortfolio(addSharesCommand)
+
+	if err == nil {
+		t.Errorf("Expected Error but got none")
+	}
+}
+
 func TestSharesRemovedFromPortfolioEventCanBePublished(t *testing.T) {
 	eventStream := infrastructure.InMemoryEventStream{
 		[]infrastructure.Event{
-			{portfolio.SharesAddedToPortfolioEventName, map[string]interface{}{
-				"ticker": "MO",
-				"shares": 20,
-				"price":  10.00,
-				"date":   "2000-01-01",
-			}},
+			{
+				portfolio.SharesAddedToPortfolioEventName,
+				map[string]interface{}{
+					"ticker": "MO",
+					"shares": 20,
+					"price":  10.00,
+				},
+				map[string]interface{}{"occurred_at": "2000-01-01"},
+			},
 		},
 	}
 	publisher := event.NewPortfolioEventPublisher(&eventStream)
@@ -75,8 +93,8 @@ func TestSharesRemovedFromPortfolioEventCanBePublished(t *testing.T) {
 			"ticker": "MO",
 			"shares": 10,
 			"price":  float32(9.99),
-			"date":   "2000-01-02",
 		},
+		map[string]interface{}{"occurred_at": "2000-01-02"},
 	}
 	got := eventStream.Events[1]
 
@@ -85,7 +103,34 @@ func TestSharesRemovedFromPortfolioEventCanBePublished(t *testing.T) {
 	}
 }
 
-func TestItReturnsDomainErrorWhenRemoveSharesFromPortfolioCommandFails(t *testing.T) {
+func TestItReturnsErrorWhenPublishingEventAfterRemoveSharesCommandFails(t *testing.T) {
+	eventStream := infrastructure.InMemoryEventStream{
+		[]infrastructure.Event{
+			{
+				portfolio.SharesAddedToPortfolioEventName,
+				map[string]interface{}{
+					"ticker": "MO",
+					"shares": 20,
+					"price":  10.00,
+				},
+				map[string]interface{}{"occurred_at": "2000-01-01"},
+			},
+		},
+	}
+	publisher := event.NewPortfolioEventPublisher(&eventStream)
+	removeSharesCommand := command.NewRemoveSharesFromPortfolioCommand("MO", 10, 9.99)
+	removeSharesCommand.Date = "FOO"
+	repository := persistence.NewEventSourcedPortfolioRepository(&eventStream)
+	commandHandler := NewCommandHandler(&repository, publisher)
+
+	err := commandHandler.HandleRemoveSharesFromPortfolio(removeSharesCommand)
+
+	if err == nil {
+		t.Errorf("Expected Error but got none")
+	}
+}
+
+func TestItReturnsErrorWhenRemoveSharesFromPortfolioCommandFails(t *testing.T) {
 	eventStream := infrastructure.InMemoryEventStream{}
 	publisher := event.NewPortfolioEventPublisher(&eventStream)
 	removeSharesCommand := command.NewRemoveSharesFromPortfolioCommand("MO", 10, 9.99)
@@ -102,12 +147,15 @@ func TestItReturnsDomainErrorWhenRemoveSharesFromPortfolioCommandFails(t *testin
 func TestRenameTickerCommandIsHandled(t *testing.T) {
 	eventStream := infrastructure.InMemoryEventStream{
 		[]infrastructure.Event{
-			{portfolio.SharesAddedToPortfolioEventName, map[string]interface{}{
-				"ticker": "MO",
-				"shares": 20,
-				"price":  10.00,
-				"date":   "2000-01-01",
-			}},
+			{
+				portfolio.SharesAddedToPortfolioEventName,
+				map[string]interface{}{
+					"ticker": "MO",
+					"shares": 20,
+					"price":  10.00,
+				},
+				map[string]interface{}{"occurred_at": "2000-01-01"},
+			},
 		},
 	}
 	publisher := event.NewPortfolioEventPublisher(&eventStream)
@@ -121,14 +169,68 @@ func TestRenameTickerCommandIsHandled(t *testing.T) {
 	expectedEvent := infrastructure.Event{
 		portfolio.TickerRenamedEventName,
 		map[string]interface{}{
-			"old":  "MO",
-			"new":  "FOO",
-			"date": "2000-01-02",
+			"old": "MO",
+			"new": "FOO",
 		},
+		map[string]interface{}{"occurred_at": "2000-01-02"},
 	}
 	got := eventStream.Events[1]
 
 	if reflect.DeepEqual(got, expectedEvent) == false {
 		t.Errorf("Unexpected event published. Expected:%#v Got:%#v", expectedEvent, got)
+	}
+}
+
+func TestItReturnsErrorWhenRenameTickerCommandFails(t *testing.T) {
+	eventStream := infrastructure.InMemoryEventStream{
+		[]infrastructure.Event{
+			{
+				portfolio.SharesAddedToPortfolioEventName,
+				map[string]interface{}{
+					"ticker": "MO",
+					"shares": 20,
+					"price":  10.00,
+				},
+				map[string]interface{}{"occurred_at": "2000-01-01"},
+			},
+		},
+	}
+	publisher := event.NewPortfolioEventPublisher(&eventStream)
+	renameTickerCommand := command.NewRenameTickerCommand("FOO", "BAR")
+	renameTickerCommand.Date = "2000-01-02"
+	repository := persistence.NewEventSourcedPortfolioRepository(&eventStream)
+	commandHandler := NewCommandHandler(&repository, publisher)
+
+	err := commandHandler.HandleRenameTicker(renameTickerCommand)
+
+	if err == nil {
+		t.Errorf("Expected Error but got none")
+	}
+}
+
+func TestItReturnsErrorWhenPublishingEventAfterRenameTickerCommandFails(t *testing.T) {
+	eventStream := infrastructure.InMemoryEventStream{
+		[]infrastructure.Event{
+			{
+				portfolio.SharesAddedToPortfolioEventName,
+				map[string]interface{}{
+					"ticker": "MO",
+					"shares": 20,
+					"price":  10.00,
+				},
+				map[string]interface{}{"occurred_at": "2000-01-01"},
+			},
+		},
+	}
+	publisher := event.NewPortfolioEventPublisher(&eventStream)
+	renameTickerCommand := command.NewRenameTickerCommand("MO", "BAR")
+	renameTickerCommand.Date = "FOO"
+	repository := persistence.NewEventSourcedPortfolioRepository(&eventStream)
+	commandHandler := NewCommandHandler(&repository, publisher)
+
+	err := commandHandler.HandleRenameTicker(renameTickerCommand)
+
+	if err == nil {
+		t.Errorf("Expected Error but got none")
 	}
 }

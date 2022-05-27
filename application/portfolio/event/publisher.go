@@ -13,12 +13,18 @@ func NewPortfolioEventPublisher(eventStream infrastructure.EventStream) Portfoli
 	return PortfolioEventPublisher{eventStream: eventStream}
 }
 
-func (publisher *PortfolioEventPublisher) PublishDomainEvents(events []domain.DomainEvent) {
+func (publisher *PortfolioEventPublisher) PublishDomainEvents(events []domain.DomainEvent, occurredAt string) error {
 	for _, event := range events {
 		genericEvent := infrastructure.Event{
 			event.Name(),
 			event.Payload(),
+			map[string]interface{}{"occurred_at": occurredAt},
 		}
-		publisher.eventStream.Add(genericEvent)
+		err := publisher.eventStream.Add(genericEvent)
+		if err != nil {
+			return err
+		}
 	}
+
+	return nil
 }

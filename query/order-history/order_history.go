@@ -73,7 +73,7 @@ func extractEventData(event infrastructure.Event) (string, int, float32, string)
 	if !ok {
 		price = float32(event.Payload["price"].(float64))
 	}
-	date, ok := event.Payload["date"].(string)
+	date, ok := event.MetaData["occurred_at"].(string)
 
 	return ticker, shares, price, date
 }
