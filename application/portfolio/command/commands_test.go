@@ -1,7 +1,8 @@
-package command
+package command_test
 
 import (
 	"reflect"
+	"stock-monitor/application/portfolio/command"
 	"testing"
 	"time"
 )
@@ -9,32 +10,32 @@ import (
 func TestAddSharesToPortfolioCommandHasTodayAsDefaultDate(t *testing.T) {
 	today := time.Now().Format("2006-01-02")
 
-	command := NewAddSharesToPortfolioCommand("MO", 20, 19.99)
-	expected := AddSharesToPortfolioCommand{"MO", 20, 19.99, today}
+	addSharesToPortfolioCommand := command.NewAddSharesToPortfolioCommand("MO", 20, 19.99)
+	expected := command.AddSharesToPortfolioCommand{"MO", 20, 19.99, today}
 
-	if reflect.DeepEqual(command, expected) == false {
-		t.Errorf("Unexpected command. got: %#v, want: %#v", command, expected)
+	if reflect.DeepEqual(addSharesToPortfolioCommand, expected) == false {
+		t.Errorf("Unexpected command. got: %#v, want: %#v", addSharesToPortfolioCommand, expected)
 	}
 }
 
 func TestRemoveSharesFromPortfolioCommandHasTodayAsDefaultDate(t *testing.T) {
 	today := time.Now().Format("2006-01-02")
 
-	command := NewRemoveSharesFromPortfolioCommand("MO", 20, 19.99)
-	expected := RemoveSharesFromPortfolioCommand{"MO", 20, 19.99, today}
+	removeSharesFromPortfolioCommand := command.NewRemoveSharesFromPortfolioCommand("MO", 20, 19.99)
+	expected := command.RemoveSharesFromPortfolioCommand{"MO", 20, 19.99, today}
 
-	if reflect.DeepEqual(command, expected) == false {
-		t.Errorf("Unexpected command. got: %#v, want: %#v", command, expected)
+	if reflect.DeepEqual(removeSharesFromPortfolioCommand, expected) == false {
+		t.Errorf("Unexpected command. got: %#v, want: %#v", removeSharesFromPortfolioCommand, expected)
 	}
 }
 
 func TestRenameTickerCommandHasTodayAsDefaultDate(t *testing.T) {
 	today := time.Now().Format("2006-01-02")
 
-	command := NewRenameTickerCommand("MO", "FOO")
-	expected := RenameTickerCommand{"MO", "FOO", today}
+	renameCommand := command.NewRenameTickerCommand("MO", "FOO")
+	expected := command.RenameTickerCommand{"MO", "FOO", today}
 
-	if reflect.DeepEqual(command, expected) == false {
-		t.Errorf("Unexpected command. got: %#v, want: %#v", command, expected)
+	if reflect.DeepEqual(renameCommand, expected) == false {
+		t.Errorf("Unexpected command. got: %#v, want: %#v", renameCommand, expected)
 	}
 }
