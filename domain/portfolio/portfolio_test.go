@@ -1,24 +1,25 @@
-package portfolio
+package portfolio_test
 
 import (
 	"reflect"
 	"stock-monitor/domain"
+	"stock-monitor/domain/portfolio"
 	"testing"
 )
 
 func TestCanAddShares(t *testing.T) {
-	portfolio := NewPortfolio()
+	p := portfolio.NewPortfolio()
 
-	err := portfolio.AddSharesToPortfolio("MO", 10, 9.99)
+	err := p.AddSharesToPortfolio("MO", 10, 9.99)
 	if err != nil {
 		t.Errorf("Unexpected Error. %#v", err)
 	}
 
-	expectedEvent := NewSharesAddedToPortfolioEvent("MO", 10, 9.99)
+	expectedEvent := portfolio.NewSharesAddedToPortfolioEvent("MO", 10, 9.99)
 	expectedEventArray := []domain.DomainEvent{
 		&expectedEvent,
 	}
-	got := portfolio.GetRecordedEvents()
+	got := p.GetRecordedEvents()
 
 	if reflect.DeepEqual(got, expectedEventArray) == false {
 		t.Errorf("Expected domain event missing. Expected:%#v Got:%#v", expectedEventArray, got)
@@ -26,20 +27,20 @@ func TestCanAddShares(t *testing.T) {
 }
 
 func TestCanRemoveShares(t *testing.T) {
-	portfolio := NewPortfolio()
+	p := portfolio.NewPortfolio()
 
-	sharesAddedEvent := NewSharesAddedToPortfolioEvent("MO", 11, 9.99)
-	portfolio.Apply(&sharesAddedEvent)
-	err := portfolio.RemoveSharesFromPortfolio("MO", 10, 9.99)
+	sharesAddedEvent := portfolio.NewSharesAddedToPortfolioEvent("MO", 11, 9.99)
+	p.Apply(&sharesAddedEvent)
+	err := p.RemoveSharesFromPortfolio("MO", 10, 9.99)
 	if err != nil {
 		t.Errorf("Unexpected Error. %#v", err)
 	}
 
-	expectedEvent := NewSharesRemovedFromPortfolioEvent("MO", 10, 9.99)
+	expectedEvent := portfolio.NewSharesRemovedFromPortfolioEvent("MO", 10, 9.99)
 	expectedEventArray := []domain.DomainEvent{
 		&expectedEvent,
 	}
-	got := portfolio.GetRecordedEvents()
+	got := p.GetRecordedEvents()
 
 	if reflect.DeepEqual(got, expectedEventArray) == false {
 		t.Errorf("Expected domain event missing. Expected:%#v Got:%#v", expectedEventArray, got)
@@ -47,14 +48,14 @@ func TestCanRemoveShares(t *testing.T) {
 }
 
 func TestSharesAddedToPortfolioEventCanBeApplied(t *testing.T) {
-	portfolio := NewPortfolio()
+	p := portfolio.NewPortfolio()
 
-	sharesAddedEvent := NewSharesAddedToPortfolioEvent("MO", 11, 9.99)
-	sharesAddedEvent2 := NewSharesAddedToPortfolioEvent("MO", 9, 9.99)
-	portfolio.Apply(&sharesAddedEvent)
-	portfolio.Apply(&sharesAddedEvent2)
+	sharesAddedEvent := portfolio.NewSharesAddedToPortfolioEvent("MO", 11, 9.99)
+	sharesAddedEvent2 := portfolio.NewSharesAddedToPortfolioEvent("MO", 9, 9.99)
+	p.Apply(&sharesAddedEvent)
+	p.Apply(&sharesAddedEvent2)
 
-	err := portfolio.RemoveSharesFromPortfolio("MO", 20, 9.99)
+	err := p.RemoveSharesFromPortfolio("MO", 20, 9.99)
 
 	if err != nil {
 		t.Errorf("Unexpected Error. %#v", err)
@@ -62,67 +63,67 @@ func TestSharesAddedToPortfolioEventCanBeApplied(t *testing.T) {
 }
 
 func TestSharesRemovedFromPortfolioEventCanBeApplied(t *testing.T) {
-	portfolio := NewPortfolio()
+	p := portfolio.NewPortfolio()
 
-	sharesAddedEvent := NewSharesAddedToPortfolioEvent("MO", 11, 9.99)
-	sharesRemovedEvent := NewSharesRemovedFromPortfolioEvent("MO", 11, 9.99)
-	portfolio.Apply(&sharesAddedEvent)
-	portfolio.Apply(&sharesRemovedEvent)
+	sharesAddedEvent := portfolio.NewSharesAddedToPortfolioEvent("MO", 11, 9.99)
+	sharesRemovedEvent := portfolio.NewSharesRemovedFromPortfolioEvent("MO", 11, 9.99)
+	p.Apply(&sharesAddedEvent)
+	p.Apply(&sharesRemovedEvent)
 
-	err := portfolio.RemoveSharesFromPortfolio("MO", 1, 9.99)
+	err := p.RemoveSharesFromPortfolio("MO", 1, 9.99)
 
-	_, ok := err.(*CantSellMoreSharesThanExistingError)
+	_, ok := err.(*portfolio.CantSellMoreSharesThanExistingError)
 	if !ok {
 		t.Errorf("Expected CantSellMoreSharesThanExistingError but got %#v", err)
 	}
 }
 
 func TestCanNotBuyZeroShares(t *testing.T) {
-	portfolio := NewPortfolio()
+	p := portfolio.NewPortfolio()
 
-	err := portfolio.AddSharesToPortfolio("MO", 0, 9.99)
+	err := p.AddSharesToPortfolio("MO", 0, 9.99)
 
-	_, ok := err.(*InvalidNumbersOfSharesError)
+	_, ok := err.(*portfolio.InvalidNumbersOfSharesError)
 	if !ok {
 		t.Errorf("Expected InvalidNumbersOfSharesError but got %#v", err)
 	}
 }
 
 func TestCanNotBuyNegativeNumberOfShares(t *testing.T) {
-	portfolio := NewPortfolio()
+	p := portfolio.NewPortfolio()
 
-	err := portfolio.AddSharesToPortfolio("MO", -10, 9.99)
+	err := p.AddSharesToPortfolio("MO", -10, 9.99)
 
-	_, ok := err.(*InvalidNumbersOfSharesError)
+	_, ok := err.(*portfolio.InvalidNumbersOfSharesError)
 	if !ok {
 		t.Errorf("Expected InvalidNumbersOfSharesError but got %#v", err)
 	}
 }
 
 func TestCanNotSellMoreSharesThenCurrentlyInPortfolio(t *testing.T) {
-	portfolio := NewPortfolio()
+	p := portfolio.NewPortfolio()
 
-	err := portfolio.RemoveSharesFromPortfolio("MO", 21, 9.99)
+	err := p.RemoveSharesFromPortfolio("MO", 21, 9.99)
 
-	_, ok := err.(*CantSellMoreSharesThanExistingError)
+	_, ok := err.(*portfolio.CantSellMoreSharesThanExistingError)
 	if !ok {
 		t.Errorf("Expected CantSellMoreSharesThanExistingError but got %#v", err)
 	}
 }
 
 func TestTickerCanBeRenamed(t *testing.T) {
-	portfolio := NewPortfolio()
+	p := portfolio.NewPortfolio()
 
-	sharesAddedEvent := NewSharesAddedToPortfolioEvent("MO", 11, 9.99)
-	portfolio.Apply(&sharesAddedEvent)
+	sharesAddedEvent := portfolio.NewSharesAddedToPortfolioEvent("MO", 11, 9.99)
+	p.Apply(&sharesAddedEvent)
 
-	portfolio.RenameTicker("MO", "FOO")
+	p.RenameTicker("MO", "FOO")
 
-	expectedEvent := NewTickerRenamedEvent("MO", "FOO")
+	expectedEvent := portfolio.NewTickerRenamedEvent("MO", "FOO")
 	expectedEventArray := []domain.DomainEvent{
 		&expectedEvent,
 	}
-	got := portfolio.GetRecordedEvents()
+	got := p.GetRecordedEvents()
 
 	if reflect.DeepEqual(got, expectedEventArray) == false {
 		t.Errorf("Expected domain event missing. Expected:%#v Got:%#v", expectedEventArray, got)
@@ -130,28 +131,28 @@ func TestTickerCanBeRenamed(t *testing.T) {
 }
 
 func TestTickerHasToBePresentInPortfolioToBeRenamed(t *testing.T) {
-	portfolio := NewPortfolio()
+	p := portfolio.NewPortfolio()
 
-	sharesAddedEvent := NewSharesAddedToPortfolioEvent("MO", 11, 9.99)
-	portfolio.Apply(&sharesAddedEvent)
+	sharesAddedEvent := portfolio.NewSharesAddedToPortfolioEvent("MO", 11, 9.99)
+	p.Apply(&sharesAddedEvent)
 
-	err := portfolio.RenameTicker("PG", "FOO")
+	err := p.RenameTicker("PG", "FOO")
 
-	_, ok := err.(*TickerNotInPortfolioError)
+	_, ok := err.(*portfolio.TickerNotInPortfolioError)
 	if !ok {
 		t.Errorf("Expected TickerNotInPortfolioError but got %#v", err)
 	}
 }
 
 func TestTickerCanBeRenamedEvenIfThereAreNoSharesHeld(t *testing.T) {
-	portfolio := NewPortfolio()
+	p := portfolio.NewPortfolio()
 
-	sharesAddedEvent := NewSharesAddedToPortfolioEvent("MO", 1, 9.99)
-	removeSharesEvent := NewSharesRemovedFromPortfolioEvent("MO", 1, 9.99)
-	portfolio.Apply(&sharesAddedEvent)
-	portfolio.Apply(&removeSharesEvent)
+	sharesAddedEvent := portfolio.NewSharesAddedToPortfolioEvent("MO", 1, 9.99)
+	removeSharesEvent := portfolio.NewSharesRemovedFromPortfolioEvent("MO", 1, 9.99)
+	p.Apply(&sharesAddedEvent)
+	p.Apply(&removeSharesEvent)
 
-	err := portfolio.RenameTicker("MO", "FOO")
+	err := p.RenameTicker("MO", "FOO")
 
 	if err != nil {
 		t.Errorf("Got unexpected error: %#v", err)
@@ -159,30 +160,30 @@ func TestTickerCanBeRenamedEvenIfThereAreNoSharesHeld(t *testing.T) {
 }
 
 func TestNewTickerMustNotBeAlreadyInPortfolio(t *testing.T) {
-	portfolio := NewPortfolio()
+	p := portfolio.NewPortfolio()
 
-	sharesAddedEvent := NewSharesAddedToPortfolioEvent("MO", 11, 9.99)
-	sharesAddedEvent2 := NewSharesAddedToPortfolioEvent("PG", 11, 9.99)
-	portfolio.Apply(&sharesAddedEvent)
-	portfolio.Apply(&sharesAddedEvent2)
+	sharesAddedEvent := portfolio.NewSharesAddedToPortfolioEvent("MO", 11, 9.99)
+	sharesAddedEvent2 := portfolio.NewSharesAddedToPortfolioEvent("PG", 11, 9.99)
+	p.Apply(&sharesAddedEvent)
+	p.Apply(&sharesAddedEvent2)
 
-	err := portfolio.RenameTicker("MO", "PG")
+	err := p.RenameTicker("MO", "PG")
 
-	_, ok := err.(*TickerAlreadyUsedError)
+	_, ok := err.(*portfolio.TickerAlreadyUsedError)
 	if !ok {
 		t.Errorf("Expected TickerAlreadyUsedError but got %#v", err)
 	}
 }
 
 func TestNewTickerWillBeUsedForAnyNewPortfolioCommands(t *testing.T) {
-	portfolio := NewPortfolio()
+	p := portfolio.NewPortfolio()
 
-	sharesAddedEvent := NewSharesAddedToPortfolioEvent("MO", 1, 9.99)
-	renameEvent := NewTickerRenamedEvent("MO", "FOO")
-	portfolio.Apply(&sharesAddedEvent)
-	portfolio.Apply(&renameEvent)
+	sharesAddedEvent := portfolio.NewSharesAddedToPortfolioEvent("MO", 1, 9.99)
+	renameEvent := portfolio.NewTickerRenamedEvent("MO", "FOO")
+	p.Apply(&sharesAddedEvent)
+	p.Apply(&renameEvent)
 
-	err := portfolio.RemoveSharesFromPortfolio("FOO", 1, 9.99)
+	err := p.RemoveSharesFromPortfolio("FOO", 1, 9.99)
 
 	if err != nil {
 		t.Errorf("Got unexpected error: %#v", err)
