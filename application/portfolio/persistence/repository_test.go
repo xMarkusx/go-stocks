@@ -1,7 +1,8 @@
-package persistence
+package persistence_test
 
 import (
 	"reflect"
+	"stock-monitor/application/portfolio/persistence"
 	"stock-monitor/domain/portfolio"
 	"stock-monitor/infrastructure"
 	"testing"
@@ -47,7 +48,7 @@ func TestEventsWillBeAppliedWhenLoadingPortfolio(t *testing.T) {
 			},
 		},
 	}
-	repository := NewEventSourcedPortfolioRepository(&eventStream)
+	repository := persistence.NewEventSourcedPortfolioRepository(&eventStream)
 
 	p := repository.Load()
 
