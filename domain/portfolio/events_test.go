@@ -1,15 +1,16 @@
-package portfolio
+package portfolio_test
 
 import (
 	"reflect"
+	"stock-monitor/domain/portfolio"
 	"testing"
 )
 
 func TestSharesAddedToPortfolioEventCanBeCreated(t *testing.T) {
-	event := NewSharesAddedToPortfolioEvent("MO", 10, 9.99)
+	event := portfolio.NewSharesAddedToPortfolioEvent("MO", 10, 9.99)
 
-	if event.Name() != SharesAddedToPortfolioEventName {
-		t.Errorf("Unexpected events name. Expected:%#v Got:%#v", SharesAddedToPortfolioEventName, event.Name())
+	if event.Name() != portfolio.SharesAddedToPortfolioEventName {
+		t.Errorf("Unexpected events name. Expected:%#v Got:%#v", portfolio.SharesAddedToPortfolioEventName, event.Name())
 	}
 
 	expectedPayload := map[string]interface{}{
@@ -23,10 +24,10 @@ func TestSharesAddedToPortfolioEventCanBeCreated(t *testing.T) {
 }
 
 func TestSharesRemovedFromPortfolioEventCanBeCreated(t *testing.T) {
-	event := NewSharesRemovedFromPortfolioEvent("MO", 10, 9.99)
+	event := portfolio.NewSharesRemovedFromPortfolioEvent("MO", 10, 9.99)
 
-	if event.Name() != SharesRemovedFromPortfolioEventName {
-		t.Errorf("Unexpected events name. Expected:%#v Got:%#v", SharesRemovedFromPortfolioEventName, event.Name())
+	if event.Name() != portfolio.SharesRemovedFromPortfolioEventName {
+		t.Errorf("Unexpected events name. Expected:%#v Got:%#v", portfolio.SharesRemovedFromPortfolioEventName, event.Name())
 	}
 
 	expectedPayload := map[string]interface{}{
@@ -40,10 +41,10 @@ func TestSharesRemovedFromPortfolioEventCanBeCreated(t *testing.T) {
 }
 
 func TestTickerRenamedEventEventCanBeCreated(t *testing.T) {
-	event := NewTickerRenamedEvent("MO", "FOO")
+	event := portfolio.NewTickerRenamedEvent("MO", "FOO")
 
-	if event.Name() != TickerRenamedEventName {
-		t.Errorf("Unexpected events name. Expected:%#v Got:%#v", TickerRenamedEvent{}, event.Name())
+	if event.Name() != portfolio.TickerRenamedEventName {
+		t.Errorf("Unexpected events name. Expected:%#v Got:%#v", portfolio.TickerRenamedEvent{}, event.Name())
 	}
 
 	expectedPayload := map[string]interface{}{
