@@ -16,7 +16,7 @@ func NewPortfolio() Portfolio {
 
 func (portfolio *Portfolio) AddSharesToPortfolio(ticker string, shares int, price float32) error {
 	if shares <= 0 {
-		return &InvalidNumbersOfSharesError{"number of shares must be greater than 0"}
+		return &InvalidNumbersOfSharesError{}
 	}
 
 	sharesAddedToPortfolioEvent := NewSharesAddedToPortfolioEvent(ticker, shares, price)
@@ -27,7 +27,7 @@ func (portfolio *Portfolio) AddSharesToPortfolio(ticker string, shares int, pric
 
 func (portfolio *Portfolio) RemoveSharesFromPortfolio(ticker string, shares int, price float32) error {
 	if portfolio.state.GetNumberOfSharesForTicker(ticker) < shares {
-		return &CantSellMoreSharesThanExistingError{"not allowed to sell more shares than currently in portfolio"}
+		return &CantSellMoreSharesThanExistingError{}
 	}
 
 	sharesRemovedFromPortfolioEvent := NewSharesRemovedFromPortfolioEvent(ticker, shares, price)
@@ -39,11 +39,11 @@ func (portfolio *Portfolio) RemoveSharesFromPortfolio(ticker string, shares int,
 func (portfolio *Portfolio) RenameTicker(old string, new string) error {
 	_, foundOld := portfolio.state.positions[old]
 	if !foundOld {
-		return &TickerNotInPortfolioError{"Ticker to be renamed not found. Ticker: " + old}
+		return NewTickerNotInPortfolioError(old)
 	}
 	_, foundNew := portfolio.state.positions[new]
 	if foundNew {
-		return &TickerAlreadyUsedError{"New ticker symbol already in use. Ticker: " + new}
+		return NewTickerAlreadyUsedError(new)
 	}
 
 	tickerRenamedEvent := NewTickerRenamedEvent(old, new)

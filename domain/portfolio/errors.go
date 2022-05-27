@@ -1,33 +1,37 @@
 package portfolio
 
-type InvalidNumbersOfSharesError struct {
-	prob string
-}
+type InvalidNumbersOfSharesError struct{}
 
-type CantSellMoreSharesThanExistingError struct {
-	prob string
-}
+type CantSellMoreSharesThanExistingError struct{}
 
 type TickerNotInPortfolioError struct {
-	prob string
+	ticker string
 }
 
 type TickerAlreadyUsedError struct {
-	prob string
+	ticker string
+}
+
+func NewTickerNotInPortfolioError(ticker string) *TickerNotInPortfolioError {
+	return &TickerNotInPortfolioError{ticker: ticker}
+}
+
+func NewTickerAlreadyUsedError(ticker string) *TickerAlreadyUsedError {
+	return &TickerAlreadyUsedError{ticker: ticker}
 }
 
 func (e *InvalidNumbersOfSharesError) Error() string {
-	return e.prob
+	return "number of shares must be greater than 0"
 }
 
 func (e *CantSellMoreSharesThanExistingError) Error() string {
-	return e.prob
+	return "not allowed to sell more shares than currently in portfolio"
 }
 
 func (e *TickerNotInPortfolioError) Error() string {
-	return e.prob
+	return "Ticker to be renamed not found. Ticker: " + e.ticker
 }
 
 func (e *TickerAlreadyUsedError) Error() string {
-	return e.prob
+	return "New ticker symbol already in use. Ticker: " + e.ticker
 }
