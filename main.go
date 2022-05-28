@@ -3,11 +3,13 @@ package main
 import (
 	"errors"
 	"fmt"
+	"github.com/urfave/cli/v2"
 	"log"
 	"os"
 	"stock-monitor/application/portfolio/command"
 	"stock-monitor/application/portfolio/command_handler"
 	"stock-monitor/application/portfolio/event"
+	"stock-monitor/application/portfolio/importer"
 	"stock-monitor/application/portfolio/persistence"
 	"stock-monitor/infrastructure"
 	"stock-monitor/query"
@@ -16,8 +18,6 @@ import (
 	"stock-monitor/query/total-invested-money"
 	"strconv"
 	"strings"
-
-	"github.com/urfave/cli/v2"
 )
 
 func main() {
@@ -134,6 +134,23 @@ func main() {
 					return nil
 				},
 			},
+			{
+				Name:    "import",
+				Aliases: []string{},
+				Usage:   "Custom csv import",
+				Action: func(c *cli.Context) error {
+					filename := c.Args().Slice()[0]
+					err := importCsv(filename, commandHandler)
+
+					if err != nil {
+						fmt.Println(err.Error())
+
+						return cli.Exit("Failed to import csv", 1)
+					}
+
+					return nil
+				},
+			},
 		},
 	}
 
@@ -163,4 +180,46 @@ func getDate(args []string) (string, error) {
 	}
 
 	return args[3], nil
+}
+
+func importCsv(filename string, handler command_handler.CommandHandler) error {
+	records, err := importer.ReadData(filename)
+
+	if err != nil {
+		return err
+	}
+
+	importItems := importer.Parse(records)
+
+	for _, item := range importItems {
+		if item.Type == "buy" {
+			addSharesCommand := command.NewAddSharesToPortfolioCommand(item.Ticker, item.Shares, item.Price)
+			addSharesCommand.Date = item.Date
+			err := handler.HandleAddSharesToPortfolio(addSharesCommand)
+			if err != nil {
+				return err
+			}
+			continue
+		}
+		if item.Type == "sell" {
+			removeSharesCommand := command.NewRemoveSharesFromPortfolioCommand(item.Ticker, item.Shares, item.Price)
+			removeSharesCommand.Date = item.Date
+			err := handler.HandleRemoveSharesFromPortfolio(removeSharesCommand)
+			if err != nil {
+				return err
+			}
+			continue
+		}
+		if item.Type == "rename" {
+			renameCommand := command.NewRenameTickerCommand(item.Ticker, item.Alias)
+			renameCommand.Date = item.Date
+			err := handler.HandleRenameTicker(renameCommand)
+			if err != nil {
+				return err
+			}
+			continue
+		}
+	}
+
+	return nil
 }
