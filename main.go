@@ -6,13 +6,17 @@ import (
 	"github.com/urfave/cli/v2"
 	"log"
 	"os"
+	dividendCommands "stock-monitor/application/dividend/command"
+	dividendCommandHandlers "stock-monitor/application/dividend/command_handler"
+	dividendPersistence "stock-monitor/application/dividend/persistence"
+	"stock-monitor/application/event"
 	"stock-monitor/application/portfolio/command"
 	"stock-monitor/application/portfolio/command_handler"
-	"stock-monitor/application/portfolio/event"
 	"stock-monitor/application/portfolio/importer"
 	"stock-monitor/application/portfolio/persistence"
 	"stock-monitor/infrastructure"
 	"stock-monitor/query"
+	dividend_history "stock-monitor/query/dividend-history"
 	"stock-monitor/query/order-history"
 	"stock-monitor/query/position-list"
 	"stock-monitor/query/total-invested-money"
@@ -22,9 +26,14 @@ import (
 
 func main() {
 	portfolioEventStream := &infrastructure.FileSystemEventStream{"./store/", "portfolio_event_stream.gob"}
-	publisher := event.NewPortfolioEventPublisher(portfolioEventStream)
+	publisher := event.NewEventPublisher(portfolioEventStream)
 	repository := persistence.NewEventSourcedPortfolioRepository(portfolioEventStream)
 	commandHandler := command_handler.NewCommandHandler(&repository, publisher)
+
+	dividendEventStream := &infrastructure.FileSystemEventStream{"./store/", "dividend_event_stream.gob"}
+	dividendPublisher := event.NewEventPublisher(dividendEventStream)
+	dividendRepository := dividendPersistence.NewEventSourcedDividendRepository(portfolioEventStream)
+	dividendCommandHandler := dividendCommandHandlers.NewCommandHandler(&dividendRepository, dividendPublisher)
 
 	app := &cli.App{
 		Commands: []*cli.Command{
@@ -106,6 +115,38 @@ func main() {
 				},
 			},
 			{
+				Name:    "record-dividend",
+				Aliases: []string{"rd"},
+				Usage:   "record a dividend",
+				Action: func(c *cli.Context) error {
+					ticker := c.Args().Slice()[0]
+					net, err := strconv.ParseFloat(c.Args().Slice()[1], 32)
+					if err != nil {
+						return cli.Exit("input for net must be float32", 1)
+					}
+					gross, err := strconv.ParseFloat(c.Args().Slice()[2], 32)
+					if err != nil {
+						return cli.Exit("input for gross must be float32", 1)
+					}
+					recordDividendCommand := dividendCommands.NewRecordDividendCommand(ticker, float32(net), float32(gross))
+					date, dateErr := getDate(c.Args().Slice())
+					if dateErr == nil {
+						recordDividendCommand.Date = date
+					}
+
+					err = dividendCommandHandler.HandleRecordDividend(recordDividendCommand)
+
+					if err != nil {
+						fmt.Println(err.Error())
+
+						return cli.Exit("Failed to record dividend", 1)
+					}
+
+					fmt.Println("dividend recorded")
+					return nil
+				},
+			},
+			{
 				Name:    "show",
 				Aliases: []string{"s"},
 				Usage:   "show positions in portfolio",
@@ -129,6 +170,20 @@ func main() {
 					fmt.Print("Order history: \n")
 					for _, order := range orderHistoryQuery.GetOrders() {
 						fmt.Printf("%#v | %#v - Ticker: %#v, Aliases: %s, shares: %#v, price: %#v\n", order.Date, order.OrderType, order.Ticker, strings.Join(order.Aliases, ", "), order.NumberOfShares, order.Price)
+					}
+
+					return nil
+				},
+			},
+			{
+				Name:    "dividend-history",
+				Aliases: []string{"dh"},
+				Usage:   "Shows history of all dividends",
+				Action: func(c *cli.Context) error {
+					dividendHistoryQuery := dividend_history.DividendHistoryQuery{dividendEventStream}
+					fmt.Print("Dividend history: \n")
+					for _, dividend := range dividendHistoryQuery.GetDividends() {
+						fmt.Printf("%#v - Ticker: %#v, Net: %#v, Gross: %#v\n", dividend.Date, dividend.Ticker, dividend.Net, dividend.Gross)
 					}
 
 					return nil

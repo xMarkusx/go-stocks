@@ -5,15 +5,15 @@ import (
 	"stock-monitor/infrastructure"
 )
 
-type PortfolioEventPublisher struct {
+type EventPublisher struct {
 	eventStream infrastructure.EventStream
 }
 
-func NewPortfolioEventPublisher(eventStream infrastructure.EventStream) PortfolioEventPublisher {
-	return PortfolioEventPublisher{eventStream: eventStream}
+func NewEventPublisher(eventStream infrastructure.EventStream) EventPublisher {
+	return EventPublisher{eventStream: eventStream}
 }
 
-func (publisher *PortfolioEventPublisher) PublishDomainEvents(events []domain.DomainEvent, occurredAt string) error {
+func (publisher *EventPublisher) PublishDomainEvents(events []domain.DomainEvent, occurredAt string) error {
 	for _, event := range events {
 		genericEvent := infrastructure.Event{
 			event.Name(),

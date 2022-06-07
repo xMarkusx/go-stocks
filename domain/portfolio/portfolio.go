@@ -14,12 +14,12 @@ func NewPortfolio() Portfolio {
 	return Portfolio{state, []domain.DomainEvent{}}
 }
 
-func (portfolio *Portfolio) AddSharesToPortfolio(ticker string, shares int, price float32) error {
+func (portfolio *Portfolio) AddSharesToPortfolio(ticker string, shares int, price float32, date string) error {
 	if shares <= 0 {
 		return &InvalidNumbersOfSharesError{}
 	}
 
-	sharesAddedToPortfolioEvent := NewSharesAddedToPortfolioEvent(ticker, shares, price)
+	sharesAddedToPortfolioEvent := NewSharesAddedToPortfolioEvent(ticker, shares, price, date)
 	portfolio.events = append(portfolio.events, &sharesAddedToPortfolioEvent)
 
 	return nil

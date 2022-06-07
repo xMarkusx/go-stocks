@@ -8,10 +8,11 @@ type SharesAddedToPortfolioEvent struct {
 	ticker string
 	shares int
 	price  float32
+	date   string
 }
 
-func NewSharesAddedToPortfolioEvent(ticker string, shares int, price float32) SharesAddedToPortfolioEvent {
-	return SharesAddedToPortfolioEvent{ticker: ticker, shares: shares, price: price}
+func NewSharesAddedToPortfolioEvent(ticker string, shares int, price float32, date string) SharesAddedToPortfolioEvent {
+	return SharesAddedToPortfolioEvent{ticker: ticker, shares: shares, price: price, date: date}
 }
 
 func (event *SharesAddedToPortfolioEvent) Name() string {
@@ -23,6 +24,7 @@ func (event *SharesAddedToPortfolioEvent) Payload() map[string]interface{} {
 		"ticker": event.ticker,
 		"shares": event.shares,
 		"price":  event.price,
+		"date":   event.date,
 	}
 }
 
