@@ -8,6 +8,7 @@ import (
 	"os"
 	dividendCommands "stock-monitor/application/dividend/command"
 	dividendCommandHandlers "stock-monitor/application/dividend/command_handler"
+	importer2 "stock-monitor/application/dividend/importer"
 	dividendPersistence "stock-monitor/application/dividend/persistence"
 	"stock-monitor/application/event"
 	"stock-monitor/application/portfolio/command"
@@ -190,12 +191,29 @@ func main() {
 				},
 			},
 			{
-				Name:    "import",
+				Name:    "import-orders",
 				Aliases: []string{},
-				Usage:   "Custom csv import",
+				Usage:   "Custom csv import of orders",
 				Action: func(c *cli.Context) error {
 					filename := c.Args().Slice()[0]
-					err := importCsv(filename, commandHandler)
+					err := importOrdersCsv(filename, commandHandler)
+
+					if err != nil {
+						fmt.Println(err.Error())
+
+						return cli.Exit("Failed to import csv", 1)
+					}
+
+					return nil
+				},
+			},
+			{
+				Name:    "import-dividends",
+				Aliases: []string{},
+				Usage:   "Custom csv import of dividends",
+				Action: func(c *cli.Context) error {
+					filename := c.Args().Slice()[0]
+					err := importDividendCsv(filename, dividendCommandHandler)
 
 					if err != nil {
 						fmt.Println(err.Error())
@@ -237,8 +255,8 @@ func getDate(args []string) (string, error) {
 	return args[3], nil
 }
 
-func importCsv(filename string, handler command_handler.CommandHandler) error {
-	records, err := importer.ReadData(filename)
+func importOrdersCsv(filename string, handler command_handler.CommandHandler) error {
+	records, err := infrastructure.ReadData(filename)
 
 	if err != nil {
 		return err
@@ -273,6 +291,27 @@ func importCsv(filename string, handler command_handler.CommandHandler) error {
 				return err
 			}
 			continue
+		}
+	}
+
+	return nil
+}
+
+func importDividendCsv(filename string, handler dividendCommandHandlers.CommandHandler) error {
+	records, err := infrastructure.ReadData(filename)
+
+	if err != nil {
+		return err
+	}
+
+	importItems := importer2.Parse(records)
+
+	for _, item := range importItems {
+		recordDividendCommand := dividendCommands.NewRecordDividendCommand(item.Ticker, item.Net, item.Gross)
+		recordDividendCommand.Date = item.Date
+		err := handler.HandleRecordDividend(recordDividendCommand)
+		if err != nil {
+			return err
 		}
 	}
 

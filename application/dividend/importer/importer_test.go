@@ -2,35 +2,29 @@ package importer_test
 
 import (
 	"reflect"
-	"stock-monitor/application/portfolio/importer"
+	"stock-monitor/application/dividend/importer"
 	"testing"
 )
 
 func TestParse(t *testing.T) {
 	csv := [][]string{
 		{
-			"buy",
 			"2000-01-01",
 			"MO",
-			"",
 			"12.3456",
-			"100",
+			"23.4567",
 		},
 		{
-			"sell",
 			"2000-01-01",
-			"MO",
-			"",
-			"12.3456",
-			"100",
+			"PG",
+			"0.12345",
+			"1.2345",
 		},
 		{
-			"rename",
 			"2000-01-01",
-			"MO",
-			"FOO",
-			"",
-			"",
+			"GIS",
+			"123",
+			"456",
 		},
 	}
 
@@ -38,28 +32,22 @@ func TestParse(t *testing.T) {
 
 	expected := []importer.ImportItem{
 		{
-			"buy",
 			"2000-01-01",
 			"MO",
-			"",
 			12.3456,
-			100,
+			23.4567,
 		},
 		{
-			"sell",
 			"2000-01-01",
-			"MO",
-			"",
-			12.3456,
-			100,
+			"PG",
+			0.12345,
+			1.2345,
 		},
 		{
-			"rename",
 			"2000-01-01",
-			"MO",
-			"FOO",
-			0,
-			0,
+			"GIS",
+			123,
+			456,
 		},
 	}
 

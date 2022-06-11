@@ -56,7 +56,6 @@ func (d *Dividend) Apply(event domain.DomainEvent) {
 		newTicker := event.Payload()["new"].(string)
 		addedDate := d.Positions[oldTicker]
 		d.Positions[newTicker] = addedDate
-		delete(d.Positions, oldTicker)
 	}
 }
 

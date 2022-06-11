@@ -107,3 +107,17 @@ func TestTickerRenamesAreHandledWhenCheckingDividendDate(t *testing.T) {
 		t.Errorf("Unexpected error. Got %#v", err.Error())
 	}
 }
+
+func TestRenamedTickersCanBeUsed(t *testing.T) {
+	d := dividend.NewDividend()
+	sharesAddedEvent := portfolio.NewSharesAddedToPortfolioEvent("MO", 10, 9.99, "2000-01-01")
+	sharesAddedEvent2 := portfolio.NewTickerRenamedEvent("MO", "FOO")
+	d.Apply(&sharesAddedEvent)
+	d.Apply(&sharesAddedEvent2)
+
+	err := d.RecordDividend("MO", 20.00, 30.00, "2000-01-02")
+
+	if err != nil {
+		t.Errorf("Unexpected error. Got %#v", err.Error())
+	}
+}

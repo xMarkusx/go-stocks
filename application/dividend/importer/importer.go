@@ -5,28 +5,25 @@ import (
 )
 
 type ImportItem struct {
-	Type   string
 	Date   string
 	Ticker string
-	Alias  string
-	Price  float32
-	Shares int
+	Net    float32
+	Gross  float32
 }
 
 func Parse(csv [][]string) []ImportItem {
 	importItems := []ImportItem{}
 	for _, record := range csv {
-		shares, _ := strconv.Atoi(record[5])
-		price, _ := strconv.ParseFloat(record[4], 32)
-		pricef32 := float32(price)
+		net, _ := strconv.ParseFloat(record[2], 32)
+		net32 := float32(net)
+		gross, _ := strconv.ParseFloat(record[3], 32)
+		gross32 := float32(gross)
 
 		item := ImportItem{
 			record[0],
 			record[1],
-			record[2],
-			record[3],
-			pricef32,
-			shares,
+			net32,
+			gross32,
 		}
 
 		importItems = append(importItems, item)
