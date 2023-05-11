@@ -180,12 +180,34 @@ func main() {
 				Name:    "dividend-history",
 				Aliases: []string{"dh"},
 				Usage:   "Shows history of all dividends",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:  "year",
+						Value: "",
+						Usage: "year to calculate the dividend amount",
+					},
+					&cli.StringFlag{
+						Name:  "ticker",
+						Value: "",
+						Usage: "ticker to calculate the dividend amount",
+					},
+				},
 				Action: func(c *cli.Context) error {
-					dividendHistoryQuery := dividend_history.DividendHistoryQuery{dividendEventStream}
+					dividendHistoryQuery := dividend_history.NewDividendHistoryQuery(dividendEventStream)
+					if c.String("year") != "" {
+						yearFilter, err := strconv.Atoi(c.String("year"))
+						if err != nil {
+							fmt.Println(err.Error())
+							return cli.Exit("Error occurred", 1)
+						}
+						dividendHistoryQuery.SetYearFilter(yearFilter)
+					}
+					dividendHistoryQuery.SetTickerFilter(c.String("ticker"))
 					fmt.Print("Dividend history: \n")
 					for _, dividend := range dividendHistoryQuery.GetDividends() {
 						fmt.Printf("%#v - Ticker: %#v, Net: %#v, Gross: %#v\n", dividend.Date, dividend.Ticker, dividend.Net, dividend.Gross)
 					}
+					fmt.Printf("Total: %#v", dividendHistoryQuery.GetSum())
 
 					return nil
 				},
