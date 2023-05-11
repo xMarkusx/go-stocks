@@ -2,13 +2,14 @@ package persistence_test
 
 import (
 	"reflect"
-	"stock-monitor/application/portfolio/persistence"
+	"stock-monitor/application/dividend/persistence"
+	"stock-monitor/domain/dividend"
 	"stock-monitor/domain/portfolio"
 	"stock-monitor/infrastructure"
 	"testing"
 )
 
-func TestEventsWillBeAppliedWhenLoadingPortfolio(t *testing.T) {
+func TestPortfolioEventsWillBeAppliedWhenLoadingDividend(t *testing.T) {
 	eventStream := infrastructure.InMemoryEventStream{
 		[]infrastructure.Event{
 			{
@@ -49,21 +50,17 @@ func TestEventsWillBeAppliedWhenLoadingPortfolio(t *testing.T) {
 			},
 		},
 	}
-	repository := persistence.NewEventSourcedPortfolioRepository(&eventStream)
+	repository := persistence.NewEventSourcedDividendRepository(&eventStream)
 
-	p := repository.Load()
+	d := repository.Load()
 
-	expectedPortfolio := portfolio.NewPortfolio()
-	event1 := portfolio.NewSharesRemovedFromPortfolioEvent("MO", 20, 10.00)
-	event2 := portfolio.NewSharesAddedToPortfolioEvent("PG", 20, 10.00, "2000-01-01")
-	event3 := portfolio.NewSharesRemovedFromPortfolioEvent("MO", 10, 10.00)
-	event4 := portfolio.NewTickerRenamedEvent("MO", "FOO")
-	expectedPortfolio.Apply(&event1)
-	expectedPortfolio.Apply(&event2)
-	expectedPortfolio.Apply(&event3)
-	expectedPortfolio.Apply(&event4)
+	expectedDividend := dividend.NewDividend()
+	event1 := portfolio.NewSharesAddedToPortfolioEvent("PG", 20, 10.00, "2000-01-01")
+	event2 := portfolio.NewTickerRenamedEvent("MO", "FOO")
+	expectedDividend.Apply(&event1)
+	expectedDividend.Apply(&event2)
 
-	if reflect.DeepEqual(p, expectedPortfolio) == false {
-		t.Errorf("Unexpected portfolio state. Expected:%#v Got:%#v", expectedPortfolio, p)
+	if reflect.DeepEqual(d, expectedDividend) == false {
+		t.Errorf("Unexpected portfolio state. Expected:%#v Got:%#v", expectedDividend, d)
 	}
 }

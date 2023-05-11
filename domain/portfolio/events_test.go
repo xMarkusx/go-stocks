@@ -7,7 +7,7 @@ import (
 )
 
 func TestSharesAddedToPortfolioEventCanBeCreated(t *testing.T) {
-	event := portfolio.NewSharesAddedToPortfolioEvent("MO", 10, 9.99)
+	event := portfolio.NewSharesAddedToPortfolioEvent("MO", 10, 9.99, "2000-01-01")
 
 	if event.Name() != portfolio.SharesAddedToPortfolioEventName {
 		t.Errorf("Unexpected events name. Expected:%#v Got:%#v", portfolio.SharesAddedToPortfolioEventName, event.Name())
@@ -17,6 +17,7 @@ func TestSharesAddedToPortfolioEventCanBeCreated(t *testing.T) {
 		"ticker": "MO",
 		"shares": 10,
 		"price":  float32(9.99),
+		"date":   "2000-01-01",
 	}
 	if reflect.DeepEqual(event.Payload(), expectedPayload) == false {
 		t.Errorf("Unexpected event payload. Expected:%#v Got:%#v", expectedPayload, event.Payload())

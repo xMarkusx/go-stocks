@@ -1,24 +1,24 @@
 package command_handler
 
 import (
+	"stock-monitor/application/event"
 	"stock-monitor/application/portfolio/command"
-	"stock-monitor/application/portfolio/event"
 	"stock-monitor/application/portfolio/persistence"
 )
 
 type CommandHandler struct {
 	repository persistence.PortfolioRepository
-	publisher  event.PortfolioEventPublisher
+	publisher  event.EventPublisher
 }
 
-func NewCommandHandler(repository persistence.PortfolioRepository, publisher event.PortfolioEventPublisher) CommandHandler {
+func NewCommandHandler(repository persistence.PortfolioRepository, publisher event.EventPublisher) CommandHandler {
 	return CommandHandler{repository: repository, publisher: publisher}
 }
 
 func (commandHandler *CommandHandler) HandleAddSharesToPortfolio(command command.AddSharesToPortfolioCommand) error {
 	p := commandHandler.repository.Load()
 
-	err := p.AddSharesToPortfolio(command.Ticker, command.NumberOfShares, command.Price)
+	err := p.AddSharesToPortfolio(command.Ticker, command.NumberOfShares, command.Price, command.Date)
 
 	if err != nil {
 		return err

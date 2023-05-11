@@ -24,7 +24,8 @@ func (repository *EventSourcedPortfolioRepository) Load() portfolio.Portfolio {
 		if event.Name == portfolio.SharesAddedToPortfolioEventName {
 			ticker := event.Payload["ticker"].(string)
 			shares := event.Payload["shares"].(int)
-			domainEvent := portfolio.NewSharesAddedToPortfolioEvent(ticker, shares, 0.0)
+			date := event.Payload["date"].(string)
+			domainEvent := portfolio.NewSharesAddedToPortfolioEvent(ticker, shares, 0.0, date)
 			p.Apply(&domainEvent)
 			continue
 		}

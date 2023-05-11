@@ -2,9 +2,9 @@ package command_handler_test
 
 import (
 	"reflect"
+	"stock-monitor/application/event"
 	"stock-monitor/application/portfolio/command"
 	"stock-monitor/application/portfolio/command_handler"
-	"stock-monitor/application/portfolio/event"
 	"stock-monitor/application/portfolio/persistence"
 	"stock-monitor/domain/portfolio"
 	"stock-monitor/infrastructure"
@@ -13,7 +13,7 @@ import (
 
 func TestItHandlesAddSharesToPortfolioCommand(t *testing.T) {
 	eventStream := infrastructure.InMemoryEventStream{}
-	publisher := event.NewPortfolioEventPublisher(&eventStream)
+	publisher := event.NewEventPublisher(&eventStream)
 	addSharesCommand := command.NewAddSharesToPortfolioCommand("MO", 10, 9.99)
 	addSharesCommand.Date = "2000-01-01"
 	repository := persistence.NewEventSourcedPortfolioRepository(&eventStream)
@@ -27,6 +27,7 @@ func TestItHandlesAddSharesToPortfolioCommand(t *testing.T) {
 			"ticker": "MO",
 			"shares": 10,
 			"price":  float32(9.99),
+			"date":   "2000-01-01",
 		},
 		map[string]interface{}{"occurred_at": "2000-01-01"},
 	}
@@ -39,7 +40,7 @@ func TestItHandlesAddSharesToPortfolioCommand(t *testing.T) {
 
 func TestItReturnsErrorWhenAddSharesToPortfolioCommandFails(t *testing.T) {
 	eventStream := infrastructure.InMemoryEventStream{}
-	publisher := event.NewPortfolioEventPublisher(&eventStream)
+	publisher := event.NewEventPublisher(&eventStream)
 	addSharesCommand := command.NewAddSharesToPortfolioCommand("MO", 0, 9.99)
 	repository := persistence.NewEventSourcedPortfolioRepository(&eventStream)
 	commandHandler := command_handler.NewCommandHandler(&repository, publisher)
@@ -53,7 +54,7 @@ func TestItReturnsErrorWhenAddSharesToPortfolioCommandFails(t *testing.T) {
 
 func TestItReturnsErrorWhenPublishingEventAfterAddSharesCommandFails(t *testing.T) {
 	eventStream := infrastructure.InMemoryEventStream{}
-	publisher := event.NewPortfolioEventPublisher(&eventStream)
+	publisher := event.NewEventPublisher(&eventStream)
 	addSharesCommand := command.NewAddSharesToPortfolioCommand("MO", 1, 9.99)
 	addSharesCommand.Date = "FOO"
 	repository := persistence.NewEventSourcedPortfolioRepository(&eventStream)
@@ -75,12 +76,13 @@ func TestSharesRemovedFromPortfolioEventCanBePublished(t *testing.T) {
 					"ticker": "MO",
 					"shares": 20,
 					"price":  10.00,
+					"date":   "2000-01-01",
 				},
 				map[string]interface{}{"occurred_at": "2000-01-01"},
 			},
 		},
 	}
-	publisher := event.NewPortfolioEventPublisher(&eventStream)
+	publisher := event.NewEventPublisher(&eventStream)
 	removeSharesCommand := command.NewRemoveSharesFromPortfolioCommand("MO", 10, 9.99)
 	removeSharesCommand.Date = "2000-01-02"
 	repository := persistence.NewEventSourcedPortfolioRepository(&eventStream)
@@ -113,12 +115,13 @@ func TestItReturnsErrorWhenPublishingEventAfterRemoveSharesCommandFails(t *testi
 					"ticker": "MO",
 					"shares": 20,
 					"price":  10.00,
+					"date":   "2000-01-01",
 				},
 				map[string]interface{}{"occurred_at": "2000-01-01"},
 			},
 		},
 	}
-	publisher := event.NewPortfolioEventPublisher(&eventStream)
+	publisher := event.NewEventPublisher(&eventStream)
 	removeSharesCommand := command.NewRemoveSharesFromPortfolioCommand("MO", 10, 9.99)
 	removeSharesCommand.Date = "FOO"
 	repository := persistence.NewEventSourcedPortfolioRepository(&eventStream)
@@ -133,7 +136,7 @@ func TestItReturnsErrorWhenPublishingEventAfterRemoveSharesCommandFails(t *testi
 
 func TestItReturnsErrorWhenRemoveSharesFromPortfolioCommandFails(t *testing.T) {
 	eventStream := infrastructure.InMemoryEventStream{}
-	publisher := event.NewPortfolioEventPublisher(&eventStream)
+	publisher := event.NewEventPublisher(&eventStream)
 	removeSharesCommand := command.NewRemoveSharesFromPortfolioCommand("MO", 10, 9.99)
 	repository := persistence.NewEventSourcedPortfolioRepository(&eventStream)
 	commandHandler := command_handler.NewCommandHandler(&repository, publisher)
@@ -154,12 +157,13 @@ func TestRenameTickerCommandIsHandled(t *testing.T) {
 					"ticker": "MO",
 					"shares": 20,
 					"price":  10.00,
+					"date":   "2000-01-01",
 				},
 				map[string]interface{}{"occurred_at": "2000-01-01"},
 			},
 		},
 	}
-	publisher := event.NewPortfolioEventPublisher(&eventStream)
+	publisher := event.NewEventPublisher(&eventStream)
 	renameTickerCommand := command.NewRenameTickerCommand("MO", "FOO")
 	renameTickerCommand.Date = "2000-01-02"
 	repository := persistence.NewEventSourcedPortfolioRepository(&eventStream)
@@ -191,12 +195,13 @@ func TestItReturnsErrorWhenRenameTickerCommandFails(t *testing.T) {
 					"ticker": "MO",
 					"shares": 20,
 					"price":  10.00,
+					"date":   "2000-01-01",
 				},
 				map[string]interface{}{"occurred_at": "2000-01-01"},
 			},
 		},
 	}
-	publisher := event.NewPortfolioEventPublisher(&eventStream)
+	publisher := event.NewEventPublisher(&eventStream)
 	renameTickerCommand := command.NewRenameTickerCommand("FOO", "BAR")
 	renameTickerCommand.Date = "2000-01-02"
 	repository := persistence.NewEventSourcedPortfolioRepository(&eventStream)
@@ -218,12 +223,13 @@ func TestItReturnsErrorWhenPublishingEventAfterRenameTickerCommandFails(t *testi
 					"ticker": "MO",
 					"shares": 20,
 					"price":  10.00,
+					"date":   "2000-01-01",
 				},
 				map[string]interface{}{"occurred_at": "2000-01-01"},
 			},
 		},
 	}
-	publisher := event.NewPortfolioEventPublisher(&eventStream)
+	publisher := event.NewEventPublisher(&eventStream)
 	renameTickerCommand := command.NewRenameTickerCommand("MO", "BAR")
 	renameTickerCommand.Date = "FOO"
 	repository := persistence.NewEventSourcedPortfolioRepository(&eventStream)

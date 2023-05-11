@@ -10,12 +10,12 @@ import (
 func TestCanAddShares(t *testing.T) {
 	p := portfolio.NewPortfolio()
 
-	err := p.AddSharesToPortfolio("MO", 10, 9.99)
+	err := p.AddSharesToPortfolio("MO", 10, 9.99, "2000-01-01")
 	if err != nil {
 		t.Errorf("Unexpected Error. %#v", err)
 	}
 
-	expectedEvent := portfolio.NewSharesAddedToPortfolioEvent("MO", 10, 9.99)
+	expectedEvent := portfolio.NewSharesAddedToPortfolioEvent("MO", 10, 9.99, "2000-01-01")
 	expectedEventArray := []domain.DomainEvent{
 		&expectedEvent,
 	}
@@ -29,7 +29,7 @@ func TestCanAddShares(t *testing.T) {
 func TestCanRemoveShares(t *testing.T) {
 	p := portfolio.NewPortfolio()
 
-	sharesAddedEvent := portfolio.NewSharesAddedToPortfolioEvent("MO", 11, 9.99)
+	sharesAddedEvent := portfolio.NewSharesAddedToPortfolioEvent("MO", 11, 9.99, "2000-01-01")
 	p.Apply(&sharesAddedEvent)
 	err := p.RemoveSharesFromPortfolio("MO", 10, 9.99)
 	if err != nil {
@@ -50,8 +50,8 @@ func TestCanRemoveShares(t *testing.T) {
 func TestSharesAddedToPortfolioEventCanBeApplied(t *testing.T) {
 	p := portfolio.NewPortfolio()
 
-	sharesAddedEvent := portfolio.NewSharesAddedToPortfolioEvent("MO", 11, 9.99)
-	sharesAddedEvent2 := portfolio.NewSharesAddedToPortfolioEvent("MO", 9, 9.99)
+	sharesAddedEvent := portfolio.NewSharesAddedToPortfolioEvent("MO", 11, 9.99, "2000-01-01")
+	sharesAddedEvent2 := portfolio.NewSharesAddedToPortfolioEvent("MO", 9, 9.99, "2000-01-01")
 	p.Apply(&sharesAddedEvent)
 	p.Apply(&sharesAddedEvent2)
 
@@ -65,7 +65,7 @@ func TestSharesAddedToPortfolioEventCanBeApplied(t *testing.T) {
 func TestSharesRemovedFromPortfolioEventCanBeApplied(t *testing.T) {
 	p := portfolio.NewPortfolio()
 
-	sharesAddedEvent := portfolio.NewSharesAddedToPortfolioEvent("MO", 11, 9.99)
+	sharesAddedEvent := portfolio.NewSharesAddedToPortfolioEvent("MO", 11, 9.99, "2000-01-01")
 	sharesRemovedEvent := portfolio.NewSharesRemovedFromPortfolioEvent("MO", 11, 9.99)
 	p.Apply(&sharesAddedEvent)
 	p.Apply(&sharesRemovedEvent)
@@ -81,7 +81,7 @@ func TestSharesRemovedFromPortfolioEventCanBeApplied(t *testing.T) {
 func TestCanNotBuyZeroShares(t *testing.T) {
 	p := portfolio.NewPortfolio()
 
-	err := p.AddSharesToPortfolio("MO", 0, 9.99)
+	err := p.AddSharesToPortfolio("MO", 0, 9.99, "2000-01-01")
 
 	_, ok := err.(*portfolio.InvalidNumbersOfSharesError)
 	if !ok {
@@ -92,7 +92,7 @@ func TestCanNotBuyZeroShares(t *testing.T) {
 func TestCanNotBuyNegativeNumberOfShares(t *testing.T) {
 	p := portfolio.NewPortfolio()
 
-	err := p.AddSharesToPortfolio("MO", -10, 9.99)
+	err := p.AddSharesToPortfolio("MO", -10, 9.99, "2000-01-01")
 
 	_, ok := err.(*portfolio.InvalidNumbersOfSharesError)
 	if !ok {
@@ -114,7 +114,7 @@ func TestCanNotSellMoreSharesThenCurrentlyInPortfolio(t *testing.T) {
 func TestTickerCanBeRenamed(t *testing.T) {
 	p := portfolio.NewPortfolio()
 
-	sharesAddedEvent := portfolio.NewSharesAddedToPortfolioEvent("MO", 11, 9.99)
+	sharesAddedEvent := portfolio.NewSharesAddedToPortfolioEvent("MO", 11, 9.99, "2000-01-01")
 	p.Apply(&sharesAddedEvent)
 
 	p.RenameTicker("MO", "FOO")
@@ -133,7 +133,7 @@ func TestTickerCanBeRenamed(t *testing.T) {
 func TestTickerHasToBePresentInPortfolioToBeRenamed(t *testing.T) {
 	p := portfolio.NewPortfolio()
 
-	sharesAddedEvent := portfolio.NewSharesAddedToPortfolioEvent("MO", 11, 9.99)
+	sharesAddedEvent := portfolio.NewSharesAddedToPortfolioEvent("MO", 11, 9.99, "2000-01-01")
 	p.Apply(&sharesAddedEvent)
 
 	err := p.RenameTicker("PG", "FOO")
@@ -147,7 +147,7 @@ func TestTickerHasToBePresentInPortfolioToBeRenamed(t *testing.T) {
 func TestTickerCanBeRenamedEvenIfThereAreNoSharesHeld(t *testing.T) {
 	p := portfolio.NewPortfolio()
 
-	sharesAddedEvent := portfolio.NewSharesAddedToPortfolioEvent("MO", 1, 9.99)
+	sharesAddedEvent := portfolio.NewSharesAddedToPortfolioEvent("MO", 1, 9.99, "2000-01-01")
 	removeSharesEvent := portfolio.NewSharesRemovedFromPortfolioEvent("MO", 1, 9.99)
 	p.Apply(&sharesAddedEvent)
 	p.Apply(&removeSharesEvent)
@@ -162,8 +162,8 @@ func TestTickerCanBeRenamedEvenIfThereAreNoSharesHeld(t *testing.T) {
 func TestNewTickerMustNotBeAlreadyInPortfolio(t *testing.T) {
 	p := portfolio.NewPortfolio()
 
-	sharesAddedEvent := portfolio.NewSharesAddedToPortfolioEvent("MO", 11, 9.99)
-	sharesAddedEvent2 := portfolio.NewSharesAddedToPortfolioEvent("PG", 11, 9.99)
+	sharesAddedEvent := portfolio.NewSharesAddedToPortfolioEvent("MO", 11, 9.99, "2000-01-01")
+	sharesAddedEvent2 := portfolio.NewSharesAddedToPortfolioEvent("PG", 11, 9.99, "2000-01-01")
 	p.Apply(&sharesAddedEvent)
 	p.Apply(&sharesAddedEvent2)
 
@@ -178,7 +178,7 @@ func TestNewTickerMustNotBeAlreadyInPortfolio(t *testing.T) {
 func TestNewTickerWillBeUsedForAnyNewPortfolioCommands(t *testing.T) {
 	p := portfolio.NewPortfolio()
 
-	sharesAddedEvent := portfolio.NewSharesAddedToPortfolioEvent("MO", 1, 9.99)
+	sharesAddedEvent := portfolio.NewSharesAddedToPortfolioEvent("MO", 1, 9.99, "2000-01-01")
 	renameEvent := portfolio.NewTickerRenamedEvent("MO", "FOO")
 	p.Apply(&sharesAddedEvent)
 	p.Apply(&renameEvent)
