@@ -19,10 +19,23 @@ type PositionListQuery struct {
 
 func (positionListQuery *PositionListQuery) GetPositions() map[string]Position {
 	positions := map[string]Position{}
-	for ticker, shares := range runPositionListProjection(positionListQuery.EventStream) {
-		currentValue := positionListQuery.ValueTracker.Current(ticker) * float32(shares)
-		positions[ticker] = Position{ticker, shares, currentValue}
+	positionChannel := make(chan Position)
+
+	positionProjection := runPositionListProjection(positionListQuery.EventStream)
+
+	for ticker, shares := range positionProjection {
+		go func(ticker string, shares int) {
+			currentValue := positionListQuery.ValueTracker.Current(ticker) * float32(shares)
+			positionChannel <- Position{ticker, shares, currentValue}
+			positions[ticker] = Position{ticker, shares, currentValue}
+		}(ticker, shares)
 	}
+
+	for i := 0; i < len(positionProjection); i++ {
+		position := <-positionChannel
+		positions[position.Ticker] = position
+	}
+
 	return positions
 }
 

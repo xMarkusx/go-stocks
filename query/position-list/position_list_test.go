@@ -140,3 +140,28 @@ func TestPositionListHandlesMultipleTickerRenames(t *testing.T) {
 		t.Errorf("Positions unequal got: %#v, want: %#v", got, want)
 	}
 }
+
+func BenchmarkPositionListQuery_GetPositions(b *testing.B) {
+	events := []infrastructure.Event{
+		{
+			portfolio.SharesAddedToPortfolioEventName,
+			map[string]interface{}{"ticker": "MO", "price": 20.45, "shares": 10},
+			map[string]interface{}{"occurred_at": "2001-01-02"},
+		},
+		{
+			portfolio.SharesAddedToPortfolioEventName,
+			map[string]interface{}{"ticker": "PG", "price": 40.00, "shares": 20},
+			map[string]interface{}{"occurred_at": "2001-01-02"},
+		},
+		{
+			portfolio.SharesRemovedFromPortfolioEventName,
+			map[string]interface{}{"ticker": "GIS", "price": 40.00, "shares": 5},
+			map[string]interface{}{"occurred_at": "2001-01-02"},
+		},
+	}
+
+	valueTracker := query.FakeValueTracker{map[string]float32{"MO": 10.00, "PG": 20.00, "GIS": 30.00}}
+
+	positionListQuery := positionList.PositionListQuery{&infrastructure.InMemoryEventStream{events}, valueTracker}
+	positionListQuery.GetPositions()
+}

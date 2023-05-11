@@ -1,9 +1,10 @@
 package query
 
 import (
-	"net/http"
 	"encoding/json"
+	"net/http"
 	"os"
+	"time"
 )
 
 type ValueTracker interface {
@@ -15,6 +16,7 @@ type FakeValueTracker struct {
 }
 
 func (valueTracker FakeValueTracker) Current(ticker string) float32 {
+	time.Sleep(40 * time.Millisecond)
 	return valueTracker.ValueMap[ticker]
 }
 
@@ -28,7 +30,7 @@ type FinnHubResponse struct {
 
 func (valueTracker FinnHubValueTracker) Current(ticker string) float32 {
 	client := &http.Client{}
-	req, _ := http.NewRequest("GET", "https://finnhub.io/api/v1/quote?symbol=" + ticker, nil)
+	req, _ := http.NewRequest("GET", "https://finnhub.io/api/v1/quote?symbol="+ticker, nil)
 	req.Header.Set("X-Finnhub-Token", os.Getenv("FINNHUB_TOKEN"))
 	resp, err := client.Do(req)
 
