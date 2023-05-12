@@ -16,16 +16,15 @@ import (
 	"stock-monitor/application/portfolio/importer"
 	"stock-monitor/application/portfolio/persistence"
 	"stock-monitor/infrastructure"
-	"stock-monitor/query"
+	"stock-monitor/infrastructure/di"
 	dividend_history "stock-monitor/query/dividend-history"
 	"stock-monitor/query/order-history"
-	"stock-monitor/query/position-list"
 	"stock-monitor/query/total-invested-money"
 	"strconv"
 	"strings"
 )
 
-func main() {
+func old_main() {
 	portfolioEventStream := &infrastructure.FileSystemEventStream{"./store/", "portfolio_event_stream.gob"}
 	publisher := event.NewEventPublisher(portfolioEventStream)
 	repository := persistence.NewEventSourcedPortfolioRepository(portfolioEventStream)
@@ -152,7 +151,7 @@ func main() {
 				Aliases: []string{"s"},
 				Usage:   "show positions in portfolio",
 				Action: func(c *cli.Context) error {
-					positionListQuery := positionList.PositionListQuery{portfolioEventStream, query.FinnHubValueTracker{}}
+					positionListQuery := di.MakePositionListQuery()
 					totalInvestedMoneyQuery := totalInvestedMoney.TotalInvestedMoneyQuery{portfolioEventStream}
 					fmt.Printf("Total invested: %v \n", totalInvestedMoneyQuery.GetTotalInvestedMoney())
 					for _, position := range positionListQuery.GetPositions() {

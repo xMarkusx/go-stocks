@@ -3,7 +3,7 @@ store/*
 stock-monitor
 *.out
 
-finnhub
+.env
 
 workspace.code-workspace
 .idea/

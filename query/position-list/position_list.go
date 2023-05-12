@@ -6,18 +6,22 @@ import (
 	"stock-monitor/query"
 )
 
+type PositionListQuery interface {
+	GetPositions() map[string]Position
+}
+
 type Position struct {
 	Ticker       string
 	Shares       int
 	CurrentValue float32
 }
 
-type PositionListQuery struct {
+type EventStreamedPositionListQuery struct {
 	EventStream  infrastructure.EventStream
 	ValueTracker query.ValueTracker
 }
 
-func (positionListQuery *PositionListQuery) GetPositions() map[string]Position {
+func (positionListQuery *EventStreamedPositionListQuery) GetPositions() map[string]Position {
 	positions := map[string]Position{}
 	positionChannel := make(chan Position)
 
