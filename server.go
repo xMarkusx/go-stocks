@@ -1,15 +1,14 @@
 package main
 
 import (
-	"stock-monitor/infrastructure/di"
-	"stock-monitor/infrastructure/handler/portfolio"
-
 	"github.com/labstack/echo/v4"
+	"stock-monitor/infrastructure/di"
+	"stock-monitor/infrastructure/handler/show_portfolio"
 )
 
 func main() {
 	positionListQuery := di.MakePositionListQuery()
-	positionListHandler := portfolio.ShowPortfolioHandler{positionListQuery}
+	positionListHandler := show_portfolio.ShowPortfolioHandler{positionListQuery}
 
 	e := echo.New()
 

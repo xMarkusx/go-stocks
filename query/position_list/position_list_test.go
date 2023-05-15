@@ -1,11 +1,11 @@
-package positionList_test
+package position_list_test
 
 import (
 	"reflect"
 	"stock-monitor/domain/portfolio"
 	"stock-monitor/infrastructure"
 	"stock-monitor/query"
-	positionList "stock-monitor/query/position-list"
+	positionList "stock-monitor/query/position_list"
 	"testing"
 )
 
@@ -30,7 +30,7 @@ func TestPositionListProvidesCompleteListOfPositions(t *testing.T) {
 
 	valueTracker := query.FakeValueTracker{map[string]float32{"MO": 10.00}}
 
-	positionListQuery := positionList.PositionListQuery{&infrastructure.InMemoryEventStream{events}, valueTracker}
+	positionListQuery := positionList.EventStreamedPositionListQuery{&infrastructure.InMemoryEventStream{events}, valueTracker}
 	got := positionListQuery.GetPositions()
 	want := map[string]positionList.Position{"MO": {"MO", 25, 250.00}}
 
@@ -53,7 +53,7 @@ func TestPositionIsRemovedWhenCompletelySold(t *testing.T) {
 		},
 	}
 
-	positionListQuery := positionList.PositionListQuery{&infrastructure.InMemoryEventStream{events}, query.FakeValueTracker{}}
+	positionListQuery := positionList.EventStreamedPositionListQuery{&infrastructure.InMemoryEventStream{events}, query.FakeValueTracker{}}
 	_, found := positionListQuery.GetPositions()["MO"]
 
 	if found {
@@ -87,7 +87,7 @@ func TestPositionListHandlesTickerRenames(t *testing.T) {
 
 	valueTracker := query.FakeValueTracker{map[string]float32{"FOO": 10.00}}
 
-	positionListQuery := positionList.PositionListQuery{&infrastructure.InMemoryEventStream{events}, valueTracker}
+	positionListQuery := positionList.EventStreamedPositionListQuery{&infrastructure.InMemoryEventStream{events}, valueTracker}
 	got := positionListQuery.GetPositions()
 	want := map[string]positionList.Position{"FOO": {"FOO", 25, 250.00}}
 
@@ -132,7 +132,7 @@ func TestPositionListHandlesMultipleTickerRenames(t *testing.T) {
 
 	valueTracker := query.FakeValueTracker{map[string]float32{"BAR": 10.00}}
 
-	positionListQuery := positionList.PositionListQuery{&infrastructure.InMemoryEventStream{events}, valueTracker}
+	positionListQuery := positionList.EventStreamedPositionListQuery{&infrastructure.InMemoryEventStream{events}, valueTracker}
 	got := positionListQuery.GetPositions()
 	want := map[string]positionList.Position{"BAR": {"BAR", 35, 350.00}}
 
@@ -162,6 +162,6 @@ func BenchmarkPositionListQuery_GetPositions(b *testing.B) {
 
 	valueTracker := query.FakeValueTracker{map[string]float32{"MO": 10.00, "PG": 20.00, "GIS": 30.00}}
 
-	positionListQuery := positionList.PositionListQuery{&infrastructure.InMemoryEventStream{events}, valueTracker}
+	positionListQuery := positionList.EventStreamedPositionListQuery{&infrastructure.InMemoryEventStream{events}, valueTracker}
 	positionListQuery.GetPositions()
 }

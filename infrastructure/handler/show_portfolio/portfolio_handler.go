@@ -1,9 +1,9 @@
-package portfolio
+package show_portfolio
 
 import (
 	"github.com/labstack/echo/v4"
 	"net/http"
-	positionList "stock-monitor/query/position-list"
+	positionList "stock-monitor/query/position_list"
 )
 
 type ShowPortfolioHandler struct {

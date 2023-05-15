@@ -3,7 +3,7 @@ package di
 import (
 	"stock-monitor/infrastructure"
 	"stock-monitor/query"
-	positionList "stock-monitor/query/position-list"
+	positionList "stock-monitor/query/position_list"
 )
 
 func MakePortfolioEventStream() infrastructure.EventStream {

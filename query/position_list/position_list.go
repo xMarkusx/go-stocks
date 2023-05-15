@@ -1,4 +1,4 @@
-package positionList
+package position_list
 
 import (
 	"stock-monitor/domain/portfolio"

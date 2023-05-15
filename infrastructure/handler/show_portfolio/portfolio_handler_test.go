@@ -1,12 +1,12 @@
-package portfolio_test
+package show_portfolio_test
 
 import (
 	"github.com/labstack/echo/v4"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
-	showPortfolioHandler "stock-monitor/infrastructure/handler/portfolio"
-	positionList "stock-monitor/query/position-list"
+	showPortfolioHandler "stock-monitor/infrastructure/handler/show_portfolio"
+	positionList "stock-monitor/query/position_list"
 	"testing"
 )
 
