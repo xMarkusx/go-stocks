@@ -28,7 +28,7 @@ func TestDividendHistoryProvidesAllDividends(t *testing.T) {
 	}
 
 	dividendHistoryQuery := dividend_history.NewDividendHistoryQuery(&infrastructure.InMemoryEventStream{events})
-	got := dividendHistoryQuery.GetDividends()
+	got := dividendHistoryQuery.GetDividends(dividend_history.NewFilter())
 	want := []dividend_history.Dividend{
 		{"MO", 12.34, 23.45, "2001-01-02"},
 		{"PG", 12.34, 23.45, "2001-01-02"},
@@ -50,7 +50,7 @@ func TestDividendHistoryCanHandleFloat32Values(t *testing.T) {
 	}
 
 	dividendHistoryQuery := dividend_history.NewDividendHistoryQuery(&infrastructure.InMemoryEventStream{events})
-	got := dividendHistoryQuery.GetDividends()
+	got := dividendHistoryQuery.GetDividends(dividend_history.NewFilter())
 	want := []dividend_history.Dividend{
 		{"MO", 12.34, 23.45, "2001-01-02"},
 	}
@@ -80,8 +80,10 @@ func TestDividendHistoryCanBeFilteredByYear(t *testing.T) {
 	}
 
 	dividendHistoryQuery := dividend_history.NewDividendHistoryQuery(&infrastructure.InMemoryEventStream{events})
-	dividendHistoryQuery.SetYearFilter(2001)
-	got := dividendHistoryQuery.GetDividends()
+	filter := dividend_history.NewFilter()
+	filter.ByYear(2001)
+
+	got := dividendHistoryQuery.GetDividends(filter)
 	want := []dividend_history.Dividend{
 		{"MO", 12.34, 23.45, "2001-01-02"},
 		{"PG", 12.34, 23.45, "2001-01-02"},
@@ -112,8 +114,10 @@ func TestDividendHistoryCanBeFilteredByTicker(t *testing.T) {
 	}
 
 	dividendHistoryQuery := dividend_history.NewDividendHistoryQuery(&infrastructure.InMemoryEventStream{events})
-	dividendHistoryQuery.SetTickerFilter("PG")
-	got := dividendHistoryQuery.GetDividends()
+	filter := dividend_history.NewFilter()
+	filter.ByTicker("PG")
+
+	got := dividendHistoryQuery.GetDividends(filter)
 	want := []dividend_history.Dividend{
 		{"PG", 12.34, 23.45, "2001-01-02"},
 	}
@@ -148,9 +152,11 @@ func TestDividendHistoryCanBeFilteredByTickerAndYear(t *testing.T) {
 	}
 
 	dividendHistoryQuery := dividend_history.NewDividendHistoryQuery(&infrastructure.InMemoryEventStream{events})
-	dividendHistoryQuery.SetTickerFilter("PG")
-	dividendHistoryQuery.SetYearFilter(2001)
-	got := dividendHistoryQuery.GetDividends()
+	filter := dividend_history.NewFilter()
+	filter.ByTicker("PG")
+	filter.ByYear(2001)
+
+	got := dividendHistoryQuery.GetDividends(filter)
 	want := []dividend_history.Dividend{
 		{"PG", 12.34, 23.45, "2001-01-02"},
 		{"PG", 12.34, 23.45, "2001-02-02"},
@@ -181,7 +187,7 @@ func TestDividendHistoryProvidesSumOfDividendsInNet(t *testing.T) {
 	}
 
 	dividendHistoryQuery := dividend_history.NewDividendHistoryQuery(&infrastructure.InMemoryEventStream{events})
-	got := dividendHistoryQuery.GetSum()
+	got := dividendHistoryQuery.GetSum(dividend_history.NewFilter())
 	want := float32(60.06)
 
 	if got != want {
@@ -209,8 +215,10 @@ func TestDividendHistorySumCanBeFilteredByYear(t *testing.T) {
 	}
 
 	dividendHistoryQuery := dividend_history.NewDividendHistoryQuery(&infrastructure.InMemoryEventStream{events})
-	dividendHistoryQuery.SetYearFilter(2001)
-	got := dividendHistoryQuery.GetSum()
+	filter := dividend_history.NewFilter()
+	filter.ByYear(2001)
+
+	got := dividendHistoryQuery.GetSum(filter)
 	want := float32(30.03)
 
 	if got != want {
@@ -238,8 +246,10 @@ func TestDividendHistorySumCanBeFilteredByTicker(t *testing.T) {
 	}
 
 	dividendHistoryQuery := dividend_history.NewDividendHistoryQuery(&infrastructure.InMemoryEventStream{events})
-	dividendHistoryQuery.SetTickerFilter("PG")
-	got := dividendHistoryQuery.GetSum()
+	filter := dividend_history.NewFilter()
+	filter.ByTicker("PG")
+
+	got := dividendHistoryQuery.GetSum(filter)
 	want := float32(20.02)
 
 	if got != want {
@@ -272,9 +282,11 @@ func TestDividendHistorySumCanBeFilteredByTickerAndYear(t *testing.T) {
 	}
 
 	dividendHistoryQuery := dividend_history.NewDividendHistoryQuery(&infrastructure.InMemoryEventStream{events})
-	dividendHistoryQuery.SetTickerFilter("PG")
-	dividendHistoryQuery.SetYearFilter(2001)
-	got := dividendHistoryQuery.GetSum()
+	filter := dividend_history.NewFilter()
+	filter.ByTicker("PG")
+	filter.ByYear(2001)
+
+	got := dividendHistoryQuery.GetSum(filter)
 	want := float32(51.04)
 
 	if got != want {

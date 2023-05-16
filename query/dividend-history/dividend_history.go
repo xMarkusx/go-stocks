@@ -7,10 +7,8 @@ import (
 )
 
 type DividendHistoryQueryInterface interface {
-	GetDividends() []Dividend
-	GetSum() float32
-	SetYearFilter(year int)
-	SetTickerFilter(ticker string)
+	GetDividends(filter Filter) []Dividend
+	GetSum(filter Filter) float32
 }
 
 type Dividend struct {
@@ -26,20 +24,37 @@ type DividendHistoryQuery struct {
 	tickerFilter string
 }
 
+type Filter struct {
+	year   int
+	ticker string
+}
+
+func NewFilter() Filter {
+	return Filter{0, ""}
+}
+
+func (filter *Filter) ByYear(year int) {
+	filter.year = year
+}
+
+func (filter *Filter) ByTicker(ticker string) {
+	filter.ticker = ticker
+}
+
 func NewDividendHistoryQuery(eventStream infrastructure.EventStream) DividendHistoryQuery {
 	return DividendHistoryQuery{eventStream, 0, ""}
 }
 
-func (dividendHistoryQuery *DividendHistoryQuery) GetDividends() []Dividend {
+func (dividendHistoryQuery *DividendHistoryQuery) GetDividends(filter Filter) []Dividend {
 	dividends := []Dividend{}
 
 	for _, event := range dividendHistoryQuery.EventStream.Get() {
 		if event.Name == dividend.DividendRecordedEventName {
-			if !dividendHistoryQuery.dividendMatchesYearFilter(event.Payload["date"].(string)) {
+			if !dividendMatchesYearFilter(event.Payload["date"].(string), filter) {
 				continue
 			}
 			ticker := event.Payload["ticker"].(string)
-			if !dividendHistoryQuery.dividendMatchesTickerFilter(ticker) {
+			if !dividendMatchesTickerFilter(ticker, filter) {
 				continue
 			}
 			net := getFloatValue(event.Payload["net"])
@@ -55,16 +70,16 @@ func (dividendHistoryQuery *DividendHistoryQuery) GetDividends() []Dividend {
 	return dividends
 }
 
-func (dividendHistoryQuery *DividendHistoryQuery) GetSum() float32 {
+func (dividendHistoryQuery *DividendHistoryQuery) GetSum(filter Filter) float32 {
 	dividends := float32(0.0)
 
 	for _, event := range dividendHistoryQuery.EventStream.Get() {
 		if event.Name == dividend.DividendRecordedEventName {
-			if !dividendHistoryQuery.dividendMatchesYearFilter(event.Payload["date"].(string)) {
+			if !dividendMatchesYearFilter(event.Payload["date"].(string), filter) {
 				continue
 			}
 			ticker := event.Payload["ticker"].(string)
-			if !dividendHistoryQuery.dividendMatchesTickerFilter(ticker) {
+			if !dividendMatchesTickerFilter(ticker, filter) {
 				continue
 			}
 			dividends += getFloatValue(event.Payload["net"])
@@ -76,14 +91,6 @@ func (dividendHistoryQuery *DividendHistoryQuery) GetSum() float32 {
 	return dividends
 }
 
-func (dividendHistoryQuery *DividendHistoryQuery) SetYearFilter(year int) {
-	dividendHistoryQuery.yearFilter = year
-}
-
-func (dividendHistoryQuery *DividendHistoryQuery) SetTickerFilter(ticker string) {
-	dividendHistoryQuery.tickerFilter = ticker
-}
-
 func getFloatValue(value interface{}) float32 {
 	floatValue, ok := value.(float32)
 	if !ok {
@@ -93,16 +100,16 @@ func getFloatValue(value interface{}) float32 {
 	return floatValue
 }
 
-func (dividendHistoryQuery *DividendHistoryQuery) dividendMatchesYearFilter(date string) bool {
+func dividendMatchesYearFilter(date string, filter Filter) bool {
 	dividendDate, _ := time.Parse("2006-01-02", date)
-	if dividendHistoryQuery.yearFilter != 0 && dividendDate.Year() != dividendHistoryQuery.yearFilter {
+	if filter.year != 0 && dividendDate.Year() != filter.year {
 		return false
 	}
 	return true
 }
 
-func (dividendHistoryQuery *DividendHistoryQuery) dividendMatchesTickerFilter(ticker string) bool {
-	if dividendHistoryQuery.tickerFilter != "" && ticker != dividendHistoryQuery.tickerFilter {
+func dividendMatchesTickerFilter(ticker string, filter Filter) bool {
+	if filter.ticker != "" && ticker != filter.ticker {
 		return false
 	}
 	return true

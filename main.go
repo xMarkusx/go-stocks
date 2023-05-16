@@ -193,20 +193,24 @@ func old_main() {
 				},
 				Action: func(c *cli.Context) error {
 					dividendHistoryQuery := dividend_history.NewDividendHistoryQuery(dividendEventStream)
+					filter := dividend_history.NewFilter()
 					if c.String("year") != "" {
-						yearFilter, err := strconv.Atoi(c.String("year"))
+						year, err := strconv.Atoi(c.String("year"))
 						if err != nil {
 							fmt.Println(err.Error())
 							return cli.Exit("Error occurred", 1)
 						}
-						dividendHistoryQuery.SetYearFilter(yearFilter)
+						filter.ByYear(year)
 					}
-					dividendHistoryQuery.SetTickerFilter(c.String("ticker"))
+					if c.String("ticker") != "" {
+						filter.ByTicker(c.String("ticker"))
+					}
+
 					fmt.Print("Dividend history: \n")
-					for _, dividend := range dividendHistoryQuery.GetDividends() {
+					for _, dividend := range dividendHistoryQuery.GetDividends(filter) {
 						fmt.Printf("%#v - Ticker: %#v, Net: %#v, Gross: %#v\n", dividend.Date, dividend.Ticker, dividend.Net, dividend.Gross)
 					}
-					fmt.Printf("Total: %#v", dividendHistoryQuery.GetSum())
+					fmt.Printf("Total: %#v", dividendHistoryQuery.GetSum(filter))
 
 					return nil
 				},
