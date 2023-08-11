@@ -6,13 +6,19 @@ import (
 	"stock-monitor/application/portfolio/persistence"
 )
 
+type PortfolioCommandHandlerInterface interface {
+	HandleAddSharesToPortfolio(command command.AddSharesToPortfolioCommand) error
+	HandleRemoveSharesFromPortfolio(command command.RemoveSharesFromPortfolioCommand) error
+	HandleRenameTicker(command command.RenameTickerCommand) error
+}
+
 type CommandHandler struct {
 	repository persistence.PortfolioRepository
 	publisher  event.EventPublisher
 }
 
-func NewCommandHandler(repository persistence.PortfolioRepository, publisher event.EventPublisher) CommandHandler {
-	return CommandHandler{repository: repository, publisher: publisher}
+func NewCommandHandler(repository persistence.PortfolioRepository, publisher event.EventPublisher) PortfolioCommandHandlerInterface {
+	return &CommandHandler{repository: repository, publisher: publisher}
 }
 
 func (commandHandler *CommandHandler) HandleAddSharesToPortfolio(command command.AddSharesToPortfolioCommand) error {

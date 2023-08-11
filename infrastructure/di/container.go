@@ -1,6 +1,9 @@
 package di
 
 import (
+	"stock-monitor/application/event"
+	"stock-monitor/application/portfolio/command_handler"
+	"stock-monitor/application/portfolio/persistence"
 	"stock-monitor/infrastructure"
 	"stock-monitor/query"
 	dividend_history "stock-monitor/query/dividend-history"
@@ -30,4 +33,11 @@ func MakeDividendHistoryQuery() dividend_history.DividendHistoryQueryInterface {
 	eventStream := MakeDividendEventStream()
 	dividendQuery := dividend_history.NewDividendHistoryQuery(eventStream)
 	return &dividendQuery
+}
+
+func MakePortfolioCommandHandler() command_handler.PortfolioCommandHandlerInterface {
+	eventStream := MakePortfolioEventStream()
+	publisher := event.NewEventPublisher(eventStream)
+	repository := persistence.NewEventSourcedPortfolioRepository(eventStream)
+	return command_handler.NewCommandHandler(&repository, publisher)
 }

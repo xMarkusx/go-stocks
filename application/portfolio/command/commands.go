@@ -1,7 +1,7 @@
 package command
 
 import (
-	"time"
+	"stock-monitor/application/shared"
 )
 
 type AddSharesToPortfolioCommand struct {
@@ -11,9 +11,8 @@ type AddSharesToPortfolioCommand struct {
 	Date           string
 }
 
-func NewAddSharesToPortfolioCommand(ticker string, numberOfShares int, price float32) AddSharesToPortfolioCommand {
-	today := time.Now().Format("2006-01-02")
-	command := AddSharesToPortfolioCommand{ticker, numberOfShares, price, today}
+func NewAddSharesToPortfolioCommand(ticker string, numberOfShares int, price float32, date shared.CommandDate) AddSharesToPortfolioCommand {
+	command := AddSharesToPortfolioCommand{ticker, numberOfShares, price, date.Get()}
 
 	return command
 }
@@ -25,9 +24,8 @@ type RemoveSharesFromPortfolioCommand struct {
 	Date           string
 }
 
-func NewRemoveSharesFromPortfolioCommand(ticker string, numberOfShares int, price float32) RemoveSharesFromPortfolioCommand {
-	today := time.Now().Format("2006-01-02")
-	command := RemoveSharesFromPortfolioCommand{ticker, numberOfShares, price, today}
+func NewRemoveSharesFromPortfolioCommand(ticker string, numberOfShares int, price float32, date shared.CommandDate) RemoveSharesFromPortfolioCommand {
+	command := RemoveSharesFromPortfolioCommand{ticker, numberOfShares, price, date.Get()}
 
 	return command
 }
@@ -38,9 +36,8 @@ type RenameTickerCommand struct {
 	Date string
 }
 
-func NewRenameTickerCommand(old string, new string) RenameTickerCommand {
-	today := time.Now().Format("2006-01-02")
-	command := RenameTickerCommand{old, new, today}
+func NewRenameTickerCommand(old string, new string, date shared.CommandDate) RenameTickerCommand {
+	command := RenameTickerCommand{old, new, date.Get()}
 
 	return command
 }

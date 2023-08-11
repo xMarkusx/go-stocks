@@ -15,6 +15,7 @@ import (
 	"stock-monitor/application/portfolio/command_handler"
 	"stock-monitor/application/portfolio/importer"
 	"stock-monitor/application/portfolio/persistence"
+	"stock-monitor/application/shared"
 	"stock-monitor/infrastructure"
 	"stock-monitor/infrastructure/di"
 	dividend_history "stock-monitor/query/dividend-history"
@@ -43,11 +44,14 @@ func old_main() {
 				Usage:   "add a buy order",
 				Action: func(c *cli.Context) error {
 					ticker, price, shares, err := prepareOrderArgs(c.Args().Slice())
-					addSharesCommand := command.NewAddSharesToPortfolioCommand(ticker, shares, price)
 					date, dateErr := getDate(c.Args().Slice())
-					if dateErr == nil {
-						addSharesCommand.Date = date
+					if dateErr != nil {
+						fmt.Println(dateErr.Error())
+
+						return cli.Exit("Failed to add order", 1)
 					}
+
+					addSharesCommand := command.NewAddSharesToPortfolioCommand(ticker, shares, price, shared.CommandDate(date))
 
 					if err == nil {
 						err = commandHandler.HandleAddSharesToPortfolio(addSharesCommand)
@@ -69,11 +73,14 @@ func old_main() {
 				Usage:   "add a sell order",
 				Action: func(c *cli.Context) error {
 					ticker, price, shares, err := prepareOrderArgs(c.Args().Slice())
-					removeSharesCommand := command.NewRemoveSharesFromPortfolioCommand(ticker, shares, price)
 					date, dateErr := getDate(c.Args().Slice())
-					if dateErr == nil {
-						removeSharesCommand.Date = date
+					if dateErr != nil {
+						fmt.Println(dateErr.Error())
+
+						return cli.Exit("Failed to add order", 1)
 					}
+
+					removeSharesCommand := command.NewRemoveSharesFromPortfolioCommand(ticker, shares, price, shared.CommandDate(date))
 
 					if err == nil {
 						err = commandHandler.HandleRemoveSharesFromPortfolio(removeSharesCommand)
@@ -96,11 +103,13 @@ func old_main() {
 				Action: func(c *cli.Context) error {
 					oldSymbol := c.Args().Slice()[0]
 					newSymbol := c.Args().Slice()[1]
-					renameTickerCommand := command.NewRenameTickerCommand(oldSymbol, newSymbol)
 					date, dateErr := getDate(c.Args().Slice())
-					if dateErr == nil {
-						renameTickerCommand.Date = date
+					if dateErr != nil {
+						fmt.Println(dateErr.Error())
+
+						return cli.Exit("Failed to add order", 1)
 					}
+					renameTickerCommand := command.NewRenameTickerCommand(oldSymbol, newSymbol, shared.CommandDate(date))
 
 					err := commandHandler.HandleRenameTicker(renameTickerCommand)
 
@@ -280,7 +289,7 @@ func getDate(args []string) (string, error) {
 	return args[3], nil
 }
 
-func importOrdersCsv(filename string, handler command_handler.CommandHandler) error {
+func importOrdersCsv(filename string, handler command_handler.PortfolioCommandHandlerInterface) error {
 	records, err := infrastructure.ReadData(filename)
 
 	if err != nil {
@@ -291,8 +300,7 @@ func importOrdersCsv(filename string, handler command_handler.CommandHandler) er
 
 	for _, item := range importItems {
 		if item.Type == "buy" {
-			addSharesCommand := command.NewAddSharesToPortfolioCommand(item.Ticker, item.Shares, item.Price)
-			addSharesCommand.Date = item.Date
+			addSharesCommand := command.NewAddSharesToPortfolioCommand(item.Ticker, item.Shares, item.Price, shared.CommandDate(item.Date))
 			err := handler.HandleAddSharesToPortfolio(addSharesCommand)
 			if err != nil {
 				return err
@@ -300,8 +308,7 @@ func importOrdersCsv(filename string, handler command_handler.CommandHandler) er
 			continue
 		}
 		if item.Type == "sell" {
-			removeSharesCommand := command.NewRemoveSharesFromPortfolioCommand(item.Ticker, item.Shares, item.Price)
-			removeSharesCommand.Date = item.Date
+			removeSharesCommand := command.NewRemoveSharesFromPortfolioCommand(item.Ticker, item.Shares, item.Price, shared.CommandDate(item.Date))
 			err := handler.HandleRemoveSharesFromPortfolio(removeSharesCommand)
 			if err != nil {
 				return err
@@ -309,8 +316,7 @@ func importOrdersCsv(filename string, handler command_handler.CommandHandler) er
 			continue
 		}
 		if item.Type == "rename" {
-			renameCommand := command.NewRenameTickerCommand(item.Ticker, item.Alias)
-			renameCommand.Date = item.Date
+			renameCommand := command.NewRenameTickerCommand(item.Ticker, item.Alias, shared.CommandDate(item.Date))
 			err := handler.HandleRenameTicker(renameCommand)
 			if err != nil {
 				return err
