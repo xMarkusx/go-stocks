@@ -1,4 +1,4 @@
-package add_stock
+package sell_stock
 
 import (
 	"github.com/labstack/echo/v4"
@@ -8,26 +8,26 @@ import (
 	"stock-monitor/application/shared"
 )
 
-type AddStockHandler struct {
+type SellStockHandler struct {
 	CommandHandler command_handler.PortfolioCommandHandlerInterface
 }
 
-type BuyOrder struct {
+type SellOrder struct {
 	Ticker string  `json:"ticker"`
 	Shares int     `json:"shares"`
 	Price  float32 `json:"price"`
 	Date   string  `json:"date"`
 }
 
-func (handler *AddStockHandler) AddStock(c echo.Context) error {
-	buyOrder := new(BuyOrder)
-	if err := c.Bind(buyOrder); err != nil {
+func (handler *SellStockHandler) SellStock(c echo.Context) error {
+	sellOrder := new(SellOrder)
+	if err := c.Bind(sellOrder); err != nil {
 		return c.String(http.StatusBadRequest, err.Error())
 	}
 
-	addSharesCommand := command.NewAddSharesToPortfolioCommand(buyOrder.Ticker, buyOrder.Shares, buyOrder.Price, shared.CommandDate(buyOrder.Date))
+	removeSharesCommand := command.NewRemoveSharesFromPortfolioCommand(sellOrder.Ticker, sellOrder.Shares, sellOrder.Price, shared.CommandDate(sellOrder.Date))
 
-	err := handler.CommandHandler.HandleAddSharesToPortfolio(addSharesCommand)
+	err := handler.CommandHandler.HandleRemoveSharesFromPortfolio(removeSharesCommand)
 
 	if err != nil {
 		return c.String(http.StatusUnprocessableEntity, err.Error())
