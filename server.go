@@ -4,6 +4,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"stock-monitor/infrastructure/di"
 	"stock-monitor/infrastructure/handler/add_stock"
+	"stock-monitor/infrastructure/handler/rename_stock"
 	"stock-monitor/infrastructure/handler/sell_stock"
 	"stock-monitor/infrastructure/handler/show_dividend_history"
 	"stock-monitor/infrastructure/handler/show_order_history"
@@ -31,6 +32,9 @@ func main() {
 
 	sellStockHandler := sell_stock.SellStockHandler{commandHandler}
 	e.POST("/sell-stock", sellStockHandler.SellStock)
+
+	renameStockHandler := rename_stock.RenameStockHandler{commandHandler}
+	e.POST("/rename-stock", renameStockHandler.RenameStock)
 
 	e.Logger.Fatal(e.Start(":8080"))
 }
