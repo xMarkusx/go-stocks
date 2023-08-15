@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/labstack/echo/v4"
 	"stock-monitor/infrastructure/di"
+	"stock-monitor/infrastructure/handler/add_dividends"
 	"stock-monitor/infrastructure/handler/add_stock"
 	"stock-monitor/infrastructure/handler/rename_stock"
 	"stock-monitor/infrastructure/handler/sell_stock"
@@ -26,15 +27,19 @@ func main() {
 	dividendHistoryHandler := show_dividend_history.ShowDividendHistoryHandler{dividendHistoryQuery}
 	e.GET("/dividend-history", dividendHistoryHandler.ShowDividendHistory)
 
-	commandHandler := di.MakePortfolioCommandHandler()
-	addStockHandler := add_stock.AddStockHandler{commandHandler}
+	portfolioCommandHandler := di.MakePortfolioCommandHandler()
+	addStockHandler := add_stock.AddStockHandler{portfolioCommandHandler}
 	e.POST("/add-stock", addStockHandler.AddStock)
 
-	sellStockHandler := sell_stock.SellStockHandler{commandHandler}
+	sellStockHandler := sell_stock.SellStockHandler{portfolioCommandHandler}
 	e.POST("/sell-stock", sellStockHandler.SellStock)
 
-	renameStockHandler := rename_stock.RenameStockHandler{commandHandler}
+	renameStockHandler := rename_stock.RenameStockHandler{portfolioCommandHandler}
 	e.POST("/rename-stock", renameStockHandler.RenameStock)
+
+	dividendCommandHandler := di.MakeDividendCommandHandler()
+	addDividendsHandler := add_dividends.AddDividendsHandler{dividendCommandHandler}
+	e.POST("/add-dividends", addDividendsHandler.AddDividends)
 
 	e.Logger.Fatal(e.Start(":8080"))
 }

@@ -30,10 +30,9 @@ func TestItHandlesRecordDividendCommand(t *testing.T) {
 	dividendEventStream := infrastructure.InMemoryEventStream{}
 
 	publisher := event.NewEventPublisher(&dividendEventStream)
-	recordDividendCommand := command.NewRecordDividendCommand("MO", 20.00, 21.00)
-	recordDividendCommand.Date = "2000-01-02"
+	recordDividendCommand := command.NewRecordDividendCommand("MO", 20.00, 21.00, "2000-01-02")
 	repository := persistence.NewEventSourcedDividendRepository(&portfolioEventStream)
-	commandHandler := command_handler.NewCommandHandler(&repository, publisher)
+	commandHandler := command_handler.NewDividendCommandHandler(&repository, publisher)
 
 	commandHandler.HandleRecordDividend(recordDividendCommand)
 
@@ -57,9 +56,9 @@ func TestItHandlesRecordDividendCommand(t *testing.T) {
 func TestItReturnsErrorWhenRecordDividendCommandFails(t *testing.T) {
 	eventStream := infrastructure.InMemoryEventStream{}
 	publisher := event.NewEventPublisher(&eventStream)
-	recordDividendCommand := command.NewRecordDividendCommand("MO", 0, 9.99)
+	recordDividendCommand := command.NewRecordDividendCommand("MO", 0, 9.99, "2000-01-02")
 	repository := persistence.NewEventSourcedDividendRepository(&eventStream)
-	commandHandler := command_handler.NewCommandHandler(&repository, publisher)
+	commandHandler := command_handler.NewDividendCommandHandler(&repository, publisher)
 
 	err := commandHandler.HandleRecordDividend(recordDividendCommand)
 
@@ -71,10 +70,9 @@ func TestItReturnsErrorWhenRecordDividendCommandFails(t *testing.T) {
 func TestItReturnsErrorWhenPublishingEventAfterRecordDividendCommandFails(t *testing.T) {
 	eventStream := infrastructure.InMemoryEventStream{}
 	publisher := event.NewEventPublisher(&eventStream)
-	recordDividendCommand := command.NewRecordDividendCommand("MO", 20.00, 21.00)
-	recordDividendCommand.Date = "FOO"
+	recordDividendCommand := command.NewRecordDividendCommand("MO", 20.00, 21.00, "FOO")
 	repository := persistence.NewEventSourcedDividendRepository(&eventStream)
-	commandHandler := command_handler.NewCommandHandler(&repository, publisher)
+	commandHandler := command_handler.NewDividendCommandHandler(&repository, publisher)
 
 	err := commandHandler.HandleRecordDividend(recordDividendCommand)
 

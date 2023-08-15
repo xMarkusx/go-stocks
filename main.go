@@ -34,7 +34,7 @@ func old_main() {
 	dividendEventStream := &infrastructure.FileSystemEventStream{"./store/", "dividend_event_stream.gob"}
 	dividendPublisher := event.NewEventPublisher(dividendEventStream)
 	dividendRepository := dividendPersistence.NewEventSourcedDividendRepository(portfolioEventStream)
-	dividendCommandHandler := dividendCommandHandlers.NewCommandHandler(&dividendRepository, dividendPublisher)
+	dividendCommandHandler := dividendCommandHandlers.NewDividendCommandHandler(&dividendRepository, dividendPublisher)
 
 	app := &cli.App{
 		Commands: []*cli.Command{
@@ -137,11 +137,13 @@ func old_main() {
 					if err != nil {
 						return cli.Exit("input for gross must be float32", 1)
 					}
-					recordDividendCommand := dividendCommands.NewRecordDividendCommand(ticker, float32(net), float32(gross))
 					date, dateErr := getDate(c.Args().Slice())
-					if dateErr == nil {
-						recordDividendCommand.Date = date
+					if dateErr != nil {
+						fmt.Println(err.Error())
+
+						return cli.Exit("Failed to record dividend", 1)
 					}
+					recordDividendCommand := dividendCommands.NewRecordDividendCommand(ticker, float32(net), float32(gross), shared.CommandDate(date))
 
 					err = dividendCommandHandler.HandleRecordDividend(recordDividendCommand)
 
@@ -328,7 +330,7 @@ func importOrdersCsv(filename string, handler command_handler.PortfolioCommandHa
 	return nil
 }
 
-func importDividendCsv(filename string, handler dividendCommandHandlers.CommandHandler) error {
+func importDividendCsv(filename string, handler dividendCommandHandlers.DividendCommandHandlerInterface) error {
 	records, err := infrastructure.ReadData(filename)
 
 	if err != nil {
@@ -338,8 +340,7 @@ func importDividendCsv(filename string, handler dividendCommandHandlers.CommandH
 	importItems := importer2.Parse(records)
 
 	for _, item := range importItems {
-		recordDividendCommand := dividendCommands.NewRecordDividendCommand(item.Ticker, item.Net, item.Gross)
-		recordDividendCommand.Date = item.Date
+		recordDividendCommand := dividendCommands.NewRecordDividendCommand(item.Ticker, item.Net, item.Gross, shared.CommandDate(item.Date))
 		err := handler.HandleRecordDividend(recordDividendCommand)
 		if err != nil {
 			return err

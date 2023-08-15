@@ -6,16 +6,20 @@ import (
 	"stock-monitor/application/event"
 )
 
-type CommandHandler struct {
+type DividendCommandHandlerInterface interface {
+	HandleRecordDividend(command command.RecordDividendCommand) error
+}
+
+type DividendCommandHandler struct {
 	repository persistence.DividendRepository
 	publisher  event.EventPublisher
 }
 
-func NewCommandHandler(repository persistence.DividendRepository, publisher event.EventPublisher) CommandHandler {
-	return CommandHandler{repository: repository, publisher: publisher}
+func NewDividendCommandHandler(repository persistence.DividendRepository, publisher event.EventPublisher) DividendCommandHandlerInterface {
+	return &DividendCommandHandler{repository: repository, publisher: publisher}
 }
 
-func (commandHandler *CommandHandler) HandleRecordDividend(command command.RecordDividendCommand) error {
+func (commandHandler *DividendCommandHandler) HandleRecordDividend(command command.RecordDividendCommand) error {
 	d := commandHandler.repository.Load()
 
 	err := d.RecordDividend(command.Ticker, command.Net, command.Gross, command.Date)

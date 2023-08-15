@@ -1,6 +1,8 @@
 package di
 
 import (
+	command_handler2 "stock-monitor/application/dividend/command_handler"
+	persistence2 "stock-monitor/application/dividend/persistence"
 	"stock-monitor/application/event"
 	"stock-monitor/application/portfolio/command_handler"
 	"stock-monitor/application/portfolio/persistence"
@@ -40,4 +42,12 @@ func MakePortfolioCommandHandler() command_handler.PortfolioCommandHandlerInterf
 	publisher := event.NewEventPublisher(eventStream)
 	repository := persistence.NewEventSourcedPortfolioRepository(eventStream)
 	return command_handler.NewCommandHandler(&repository, publisher)
+}
+
+func MakeDividendCommandHandler() command_handler2.DividendCommandHandlerInterface {
+	dividendEventStream := MakeDividendEventStream()
+	portfolioEventStream := MakePortfolioEventStream()
+	publisher := event.NewEventPublisher(dividendEventStream)
+	repository := persistence2.NewEventSourcedDividendRepository(portfolioEventStream)
+	return command_handler2.NewDividendCommandHandler(&repository, publisher)
 }

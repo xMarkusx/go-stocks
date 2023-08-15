@@ -1,7 +1,7 @@
 package command
 
 import (
-	"time"
+	"stock-monitor/application/shared"
 )
 
 type RecordDividendCommand struct {
@@ -11,9 +11,8 @@ type RecordDividendCommand struct {
 	Date   string
 }
 
-func NewRecordDividendCommand(ticker string, net float32, gross float32) RecordDividendCommand {
-	today := time.Now().Format("2006-01-02")
-	command := RecordDividendCommand{ticker, net, gross, today}
+func NewRecordDividendCommand(ticker string, net float32, gross float32, date shared.CommandDate) RecordDividendCommand {
+	command := RecordDividendCommand{ticker, net, gross, date.Get()}
 
 	return command
 }
