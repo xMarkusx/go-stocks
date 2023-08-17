@@ -1,58 +1,71 @@
 # Stock Monitor
 
-Simple cli tool to keep track of a portfolio.
+Simple web tool to keep track of a portfolio.
 
 ## Usage
 
-### Add shares
-```
-stock-monitor buy <ticker> <price> <number>
+- copy env.example to .env and add a finnhub api token
+- run `docker-compose up -d`
 
-Example:
-stock-monitor buy MO 27.2351 <number>
+### Add shares
+`POST`
+
+`http://localhost/add-stock`
+
+json payload:
+```
+{
+    "ticker": "FOO",
+    "shares": 100,
+    "price": 19.99,
+    "date": "2023-01-01"
+}
 ```
 
 ### Sell shares
-```
-stock-monitor sell <ticker> <price> <number>
+`POST`
 
-Example:
-stock-monitor sell MO 27.2351 <number>
+`http://localhost/sell-stock`
+
+json payload:
+```
+{
+    "ticker": "FOO",
+    "shares": 100,
+    "price": 19.99,
+    "date": "2023-01-01"
+}
 ```
 
 ### Rename ticker
-```
-stock-monitor rename <old_ticker> <new_ticker>
+`POST`
 
-Example:
-stock-monitor rename CTL LUMN
-```
+`http://localhost/rename-stock`
 
-### Show history of actions
+json payload:
 ```
-stock-monitor oh
-```
-
-### Show list of current positions
-```
-stock-monitor s
+{
+    "old_ticker": "FOO",
+    "new_ticker": "BAR",
+    "date": "2023-01-01"
+}
 ```
 
-get a token from finnhub.io and set is as FINNHUB_TOKEN environment variable to get current values of positions
+### Show history of orders
+`GET`
 
-## CSV Import
+`http://localhost/order-history`
 
-```
-stock-monitor import /path/to/file.csv
-```
+### Show portfolio
+`GET`
 
-CSV has to be in following format:
+`http://localhost/portfolio`
 
-```
-type,date,ticker,new_ticker,price,number_of_shares
+### Show dividends
+`GET`
 
-example:
-buy,2000-01-01,MO,,12.3456,100
-sell,2000-01-01,MO,,12.3456,100
-rename,2000-01-01,MO,FOO,,
-```
+`http://localhost/dividend-history`
+
+Filter by year and/or ticker:
+
+`?year=2023&ticker=FOO`
