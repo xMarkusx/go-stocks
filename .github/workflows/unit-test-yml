@@ -1,0 +1,14 @@
+name: Unit Test
+run-name: running unit tests
+on: [push]
+
+jobs:
+    Unit-Test
+        runs-on: golang:1.20
+        steps:
+            - name: Check out repository code
+              uses: actions/checkout@v3
+            - name: download dependencies
+              run: go mod download
+            - name: run tests
+              run: go test ./...
