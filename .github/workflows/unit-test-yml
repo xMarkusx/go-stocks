@@ -1,6 +1,10 @@
 name: Unit Test
 run-name: running unit tests
-on: [push]
+on:
+    push:
+        branches:
+            - 'master'
+            - 'feature/**'
 
 jobs:
     Unit-Test
