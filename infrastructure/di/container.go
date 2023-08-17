@@ -1,6 +1,7 @@
 package di
 
 import (
+	"os"
 	command_handler2 "stock-monitor/application/dividend/command_handler"
 	persistence2 "stock-monitor/application/dividend/persistence"
 	"stock-monitor/application/event"
@@ -14,16 +15,16 @@ import (
 )
 
 func MakePortfolioEventStream() infrastructure.EventStream {
-	return &infrastructure.FileSystemEventStream{"./store/", "portfolio_event_stream.gob"}
+	return &infrastructure.FileSystemEventStream{os.Getenv("EVENT_STREAM_STORAGE_PATH"), os.Getenv("PORTFOLIO_EVENT_STREAM_FILE")}
 }
 
 func MakeDividendEventStream() infrastructure.EventStream {
-	return &infrastructure.FileSystemEventStream{"./store/", "dividend_event_stream.gob"}
+	return &infrastructure.FileSystemEventStream{os.Getenv("EVENT_STREAM_STORAGE_PATH"), os.Getenv("DIVIDEND_EVENT_STREAM_FILE")}
 }
 
 func MakePositionListQuery() positionList.PositionListQuery {
 	eventStream := MakePortfolioEventStream()
-	return &positionList.EventStreamedPositionListQuery{eventStream, query.FinnHubValueTracker{}}
+	return &positionList.EventStreamedPositionListQuery{eventStream, query.NewFinnHubValueTracker(os.Getenv("FINNHUB_TOKEN"))}
 }
 
 func MakeOrderHistoryQuery() orderHistory.OrderHistoryQueryInterface {

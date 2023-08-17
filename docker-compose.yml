@@ -12,3 +12,6 @@ services:
       - ./store:/go/src/stock-monitor/store
     environment:
       - "FINNHUB_TOKEN=${FINNHUB_TOKEN}"
+      - "EVENT_STREAM_STORAGE_PATH=${EVENT_STREAM_STORAGE_PATH}"
+      - "PORTFOLIO_EVENT_STREAM_FILE=${PORTFOLIO_EVENT_STREAM_FILE}"
+      - "DIVIDEND_EVENT_STREAM_FILE=${DIVIDEND_EVENT_STREAM_FILE}"
