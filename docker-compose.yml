@@ -15,3 +15,17 @@ services:
       - "EVENT_STREAM_STORAGE_PATH=${EVENT_STREAM_STORAGE_PATH}"
       - "PORTFOLIO_EVENT_STREAM_FILE=${PORTFOLIO_EVENT_STREAM_FILE}"
       - "DIVIDEND_EVENT_STREAM_FILE=${DIVIDEND_EVENT_STREAM_FILE}"
+
+  rabbit:
+    image: rabbitmq:3.12-management
+    container_name: rabbit
+    restart: always
+    ports:
+      - 8080:15672
+
+  terraform:
+    image: hashicorp/terraform:latest
+    container_name: terraform
+    volumes:
+      - ./.terraform:/app
+    working_dir: /app
